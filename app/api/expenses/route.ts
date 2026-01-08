@@ -7,7 +7,7 @@ const prisma = new PrismaClient();
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const { description, amount, payerId, involvedUserIds } = body;
+    const { description, amount, payerId, involvedUserIds, groupId } = body;
 
     const splitAmount = parseFloat(amount) / involvedUserIds.length;
 
@@ -15,29 +15,32 @@ export async function POST(request: Request) {
       data: {
         description,
         amount: parseFloat(amount),
-        payerId: parseInt(payerId),
+        payerId: payerId,
+        groupId: groupId,
         splits: {
           create: involvedUserIds
-            .filter((id: number) => id !== parseInt(payerId))
-            .map((id: number) => ({
+            .filter((id: string) => id !== payerId)
+            .map((id: string) => ({
               debtorId: id,
               amount: splitAmount,
             })),
         },
       },
     });
-
     return NextResponse.json(newExpense);
   } catch (error) {
-    return NextResponse.json(
-      { error: "Error creating expense" },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: "Error" }, { status: 500 });
   }
 }
 
-export async function GET() {
+export async function GET(request: Request) {
+  const { searchParams } = new URL(request.url);
+  const groupId = searchParams.get("groupId");
+
+  if (!groupId) return NextResponse.json([]);
+
   const expenses = await prisma.expense.findMany({
+    where: { groupId: groupId },
     include: {
       payer: true,
       splits: { include: { debtor: true } },

@@ -7,13 +7,14 @@ const prisma = new PrismaClient();
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const { amount, senderId, receiverId, splitId } = body;
+    const { amount, senderId, receiverId, splitId, groupId } = body;
 
     const settlement = await prisma.settlement.create({
       data: {
         amount: parseFloat(amount),
-        senderId: parseInt(senderId),
-        receiverId: parseInt(receiverId),
+        senderId,
+        receiverId,
+        groupId: groupId,
       },
     });
 
@@ -26,24 +27,25 @@ export async function POST(request: Request) {
 
     return NextResponse.json(settlement);
   } catch (error) {
-    return NextResponse.json({ error: "Failed to settle" }, { status: 500 });
+    return NextResponse.json({ error: "Failed" }, { status: 500 });
   }
 }
 
-export async function GET() {
+export async function GET(request: Request) {
+  const { searchParams } = new URL(request.url);
+  const groupId = searchParams.get("groupId");
+
+  if (!groupId) return NextResponse.json([]);
+
   const expenses = await prisma.expense.findMany({
-    include: {
-      payer: true,
-      splits: { include: { debtor: true } },
-    },
+    where: { groupId: groupId },
+    include: { payer: true, splits: { include: { debtor: true } } },
     orderBy: { createdAt: "desc" },
   });
 
   const settlements = await prisma.settlement.findMany({
-    include: {
-      sender: true,
-      receiver: true,
-    },
+    where: { groupId: groupId },
+    include: { sender: true, receiver: true },
     orderBy: { createdAt: "desc" },
   });
 

@@ -8,16 +8,26 @@ datasource db {
 }
 
 model User {
-  id        Int      @id @default(autoincrement())
+  id        String   @id
   name      String   @unique
+  email     String?  
   
-  // Expenses (Creating Debt)
+  groups    Group[]  @relation("GroupMembers") 
   expensesPaid   Expense[] @relation("Payer")
   debtsOwed      Split[]   @relation("Debtor")
-  
-  // Settlements (Clearing Debt)
   sentMoney      Settlement[] @relation("Sender")
   receivedMoney  Settlement[] @relation("Receiver")
+}
+
+model Group {
+  id        String   @id @default(uuid())
+  name      String
+  code      String   @unique // e.g. "TRIP-2026"
+  createdAt DateTime @default(now())
+
+  members   User[]   @relation("GroupMembers")
+  expenses  Expense[]
+  settlements Settlement[]
 }
 
 model Expense {
@@ -26,7 +36,11 @@ model Expense {
   amount      Float
   createdAt   DateTime @default(now())
   
-  payerId     Int
+  // <--- NEW: Link to Group
+  groupId     String
+  group       Group    @relation(fields: [groupId], references: [id])
+
+  payerId     String   
   payer       User     @relation("Payer", fields: [payerId], references: [id])
   splits      Split[]
 }
@@ -34,11 +48,11 @@ model Expense {
 model Split {
   id        Int     @id @default(autoincrement())
   amount    Float
-  isPaid    Boolean @default(false)  
-  
+  isPaid    Boolean @default(false)
+
   expenseId Int
   expense   Expense @relation(fields: [expenseId], references: [id])
-  debtorId  Int
+  debtorId  String  
   debtor    User    @relation("Debtor", fields: [debtorId], references: [id])
 }
 
@@ -47,9 +61,13 @@ model Settlement {
   amount      Float
   createdAt   DateTime @default(now())
 
-  senderId    Int      // Who is paying back?
+  // <--- NEW: Link to Group
+  groupId     String
+  group       Group    @relation(fields: [groupId], references: [id])
+
+  senderId    String   
   sender      User     @relation("Sender", fields: [senderId], references: [id])
 
-  receiverId  Int      // Who gets the money?
+  receiverId  String   
   receiver    User     @relation("Receiver", fields: [receiverId], references: [id])
 }
