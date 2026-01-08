@@ -1,0 +1,55 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        Int      @id @default(autoincrement())
+  name      String   @unique
+  
+  // Expenses (Creating Debt)
+  expensesPaid   Expense[] @relation("Payer")
+  debtsOwed      Split[]   @relation("Debtor")
+  
+  // Settlements (Clearing Debt)
+  sentMoney      Settlement[] @relation("Sender")
+  receivedMoney  Settlement[] @relation("Receiver")
+}
+
+model Expense {
+  id          Int      @id @default(autoincrement())
+  description String
+  amount      Float
+  createdAt   DateTime @default(now())
+  
+  payerId     Int
+  payer       User     @relation("Payer", fields: [payerId], references: [id])
+  splits      Split[]
+}
+
+model Split {
+  id        Int     @id @default(autoincrement())
+  amount    Float
+  isPaid    Boolean @default(false)  
+  
+  expenseId Int
+  expense   Expense @relation(fields: [expenseId], references: [id])
+  debtorId  Int
+  debtor    User    @relation("Debtor", fields: [debtorId], references: [id])
+}
+
+model Settlement {
+  id          Int      @id @default(autoincrement())
+  amount      Float
+  createdAt   DateTime @default(now())
+
+  senderId    Int      // Who is paying back?
+  sender      User     @relation("Sender", fields: [senderId], references: [id])
+
+  receiverId  Int      // Who gets the money?
+  receiver    User     @relation("Receiver", fields: [receiverId], references: [id])
+}
