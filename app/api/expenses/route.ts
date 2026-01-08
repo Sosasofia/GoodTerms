@@ -7,7 +7,8 @@ const prisma = new PrismaClient();
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const { description, amount, payerId, involvedUserIds, groupId } = body;
+    const { description, amount, payerId, involvedUserIds, groupId, note } =
+      body;
 
     const splitAmount = parseFloat(amount) / involvedUserIds.length;
 
@@ -15,6 +16,7 @@ export async function POST(request: Request) {
       data: {
         description,
         amount: parseFloat(amount),
+        note: note,
         payerId: payerId,
         groupId: groupId,
         splits: {
@@ -27,9 +29,14 @@ export async function POST(request: Request) {
         },
       },
     });
+
     return NextResponse.json(newExpense);
   } catch (error) {
-    return NextResponse.json({ error: "Error" }, { status: 500 });
+    console.error(error);
+    return NextResponse.json(
+      { error: "Error creating expense" },
+      { status: 500 }
+    );
   }
 }
 

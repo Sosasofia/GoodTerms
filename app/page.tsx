@@ -5,7 +5,6 @@ import { UserButton, useUser } from "@clerk/nextjs";
 export default function Home() {
   const { user } = useUser();
 
-  // --- STATE ---
   const [groups, setGroups] = useState<any[]>([]);
   const [activeGroupId, setActiveGroupId] = useState<string>("");
 
@@ -21,6 +20,7 @@ export default function Home() {
   // Forms
   const [desc, setDesc] = useState("");
   const [amount, setAmount] = useState("");
+  const [note, setNote] = useState("");
 
   // Group Forms
   const [newGroupName, setNewGroupName] = useState("");
@@ -34,37 +34,30 @@ export default function Home() {
   const [involved, setInvolved] = useState<string[]>([]);
   const [viewerId, setViewerId] = useState("");
 
-  // --- INITIALIZATION ---
   useEffect(() => {
     async function init() {
       if (user) {
-        // 1. Sync User to DB
         await fetch("/api/auth/sync", { method: "POST" });
-        // 2. Load my Groups
         fetchGroups();
       }
     }
     init();
   }, [user]);
 
-  // When Active Group Changes -> Load that Group's Data
   useEffect(() => {
     if (activeGroupId) {
       fetchGroupData(activeGroupId);
     } else {
-      // Reset if no group selected
       setItems([]);
       setGroupMembers([]);
     }
   }, [activeGroupId]);
 
-  // --- FETCHERS ---
   async function fetchGroups() {
     const res = await fetch("/api/groups");
     if (res.ok) {
       const data = await res.json();
       setGroups(data);
-      // Auto-select first group if exists and none selected
       if (data.length > 0 && !activeGroupId) {
         setActiveGroupId(data[0].id);
       }
@@ -77,7 +70,7 @@ export default function Home() {
       setGroupMembers(group.members);
       if (group.members.length > 0) {
         setPayerId(group.members[0].id);
-        setViewerId(user?.id || group.members[0].id); // Default to "Me"
+        setViewerId(user?.id || group.members[0].id);
         setInvolved(group.members.map((u: any) => u.id));
       }
     }
@@ -125,6 +118,7 @@ export default function Home() {
       body: JSON.stringify({
         description: desc,
         amount: parseFloat(amount),
+        note: note,
         payerId: payerId,
         involvedUserIds: involved,
         groupId: activeGroupId,
@@ -132,6 +126,7 @@ export default function Home() {
     });
     setDesc("");
     setAmount("");
+    setNote("");
     fetchGroupData(activeGroupId);
   }
 
@@ -408,6 +403,14 @@ export default function Home() {
                       value={desc}
                       onChange={(e) => setDesc(e.target.value)}
                     />
+
+                    <input
+                      className="w-full border p-3 rounded-lg"
+                      placeholder="Note (optional, e.g. Due Date)"
+                      value={note}
+                      onChange={(e) => setNote(e.target.value)}
+                    />
+
                     <input
                       className="w-full border p-3 rounded-lg"
                       type="number"
@@ -532,6 +535,12 @@ export default function Home() {
                     <div className="flex justify-between items-center">
                       <div>
                         <h3 className="font-bold">{item.description}</h3>
+                        {item.note && (
+                          <p className="text-xs text-slate-500 italic mb-1">
+                            📝 {item.note}
+                          </p>
+                        )}
+
                         <p className="text-xs text-slate-500">
                           {item.payer.name} paid ${item.amount}
                         </p>

@@ -34,9 +34,9 @@ model Expense {
   id          Int      @id @default(autoincrement())
   description String
   amount      Float
+  note        String?
   createdAt   DateTime @default(now())
   
-  // <--- NEW: Link to Group
   groupId     String
   group       Group    @relation(fields: [groupId], references: [id])
 
@@ -61,7 +61,6 @@ model Settlement {
   amount      Float
   createdAt   DateTime @default(now())
 
-  // <--- NEW: Link to Group
   groupId     String
   group       Group    @relation(fields: [groupId], references: [id])
 
