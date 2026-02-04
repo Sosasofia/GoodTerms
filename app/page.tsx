@@ -68,8 +68,11 @@ export default function Home() {
     const group = groups.find((g) => g.id === groupId);
     if (group) {
       setGroupMembers(group.members);
-      if (group.members.length > 0) {
+
+      // ✅ SAFE VERSION: Check if members exist before grabbing ID
+      if (group.members && group.members.length > 0) {
         setPayerId(group.members[0].id);
+        // Only try to use user.id if user exists
         setViewerId(user?.id || group.members[0].id);
         setInvolved(group.members.map((u: any) => u.id));
       }
@@ -205,11 +208,10 @@ export default function Home() {
             <button
               key={g.id}
               onClick={() => setActiveGroupId(g.id)}
-              className={`w-full text-left px-4 py-3 rounded-lg transition ${
-                activeGroupId === g.id
-                  ? "bg-blue-600 text-white shadow-lg"
-                  : "hover:bg-slate-800 text-slate-300"
-              }`}
+              className={`w-full text-left px-4 py-3 rounded-lg transition ${activeGroupId === g.id
+                ? "bg-blue-600 text-white shadow-lg"
+                : "hover:bg-slate-800 text-slate-300"
+                }`}
             >
               <div className="font-bold">{g.name}</div>
               <div className="text-[10px] opacity-70">Code: {g.code}</div>
@@ -349,20 +351,18 @@ export default function Home() {
               {groupMembers.map((u) => (
                 <div
                   key={u.id}
-                  className={`p-2 rounded-lg text-center border ${
-                    balances[u.name] >= 0
-                      ? "bg-green-50 border-green-200"
-                      : "bg-red-50 border-red-200"
-                  }`}
+                  className={`p-2 rounded-lg text-center border ${balances[u.name] >= 0
+                    ? "bg-green-50 border-green-200"
+                    : "bg-red-50 border-red-200"
+                    }`}
                 >
                   <div className="font-bold text-sm truncate">{u.name}</div>
                   <div
-                    className={`font-bold ${
-                      balances[u.name] >= 0 ? "text-green-600" : "text-red-600"
-                    }`}
+                    className={`font-bold ${balances[u.name] >= 0 ? "text-green-600" : "text-red-600"
+                      }`}
                   >
                     {balances[u.name] >= 0 ? "+" : ""}
-                    {balances[u.name]?.toFixed(0)}
+                    {balances[u.name] ? balances[u.name].toFixed(0) : "0"}
                   </div>
                 </div>
               ))}
@@ -372,21 +372,19 @@ export default function Home() {
             <div className="flex mb-4 bg-white rounded-lg p-1 shadow-sm">
               <button
                 onClick={() => setActiveTab("expense")}
-                className={`flex-1 py-2 rounded font-bold ${
-                  activeTab === "expense"
-                    ? "bg-blue-100 text-blue-700"
-                    : "text-slate-500"
-                }`}
+                className={`flex-1 py-2 rounded font-bold ${activeTab === "expense"
+                  ? "bg-blue-100 text-blue-700"
+                  : "text-slate-500"
+                  }`}
               >
                 Add Expense
               </button>
               <button
                 onClick={() => setActiveTab("settlement")}
-                className={`flex-1 py-2 rounded font-bold ${
-                  activeTab === "settlement"
-                    ? "bg-green-100 text-green-700"
-                    : "text-slate-500"
-                }`}
+                className={`flex-1 py-2 rounded font-bold ${activeTab === "settlement"
+                  ? "bg-green-100 text-green-700"
+                  : "text-slate-500"
+                  }`}
               >
                 Settle Up
               </button>
@@ -525,11 +523,10 @@ export default function Home() {
               {items.map((item) => (
                 <div
                   key={`${item.type}-${item.id}`}
-                  className={`p-4 rounded-xl shadow-sm border-l-4 bg-white ${
-                    item.type === "expense"
-                      ? "border-blue-400"
-                      : "border-green-400"
-                  }`}
+                  className={`p-4 rounded-xl shadow-sm border-l-4 bg-white ${item.type === "expense"
+                    ? "border-blue-400"
+                    : "border-green-400"
+                    }`}
                 >
                   {item.type === "expense" ? (
                     <div className="flex justify-between items-center">
@@ -549,11 +546,10 @@ export default function Home() {
                         {item.splits.map((s: any) => (
                           <div
                             key={s.id}
-                            className={`text-xs ${
-                              s.isPaid
-                                ? "text-green-600 line-through"
-                                : "text-red-500"
-                            }`}
+                            className={`text-xs ${s.isPaid
+                              ? "text-green-600 line-through"
+                              : "text-red-500"
+                              }`}
                           >
                             {s.debtor.name} {s.isPaid ? "paid" : "owes"} $
                             {s.amount.toFixed(0)}
