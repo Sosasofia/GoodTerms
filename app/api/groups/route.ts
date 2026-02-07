@@ -1,42 +1,77 @@
-export const dynamic = "force-dynamic";
 import { NextResponse } from "next/server";
-import { PrismaClient } from "@prisma/client";
-import { currentUser } from "@clerk/nextjs/server";
-
-const prisma = new PrismaClient();
+import { auth, currentUser } from "@clerk/nextjs/server";
+import { prisma } from "../../lib/prisma";
 
 export async function GET() {
-  const user = await currentUser();
-  if (!user) return NextResponse.json([], { status: 401 });
+  const { userId } = await auth();
 
-  const groups = await prisma.group.findMany({
-    where: {
-      members: { some: { id: user.id } },
-    },
-    include: { members: true },
-  });
+  if (!userId) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
 
-  return NextResponse.json(groups);
+  try {
+    const groups = await prisma.group.findMany({
+      where: {
+        members: {
+          some: {
+            clerkId: userId,
+          },
+        },
+      },
+      include: {
+        members: true,
+      },
+      orderBy: {
+        createdAt: "desc",
+      },
+    });
+
+    return NextResponse.json(groups);
+  } catch (error) {
+    console.error("GET Error:", error);
+    return NextResponse.json(
+      { error: "Failed to fetch groups" },
+      { status: 500 },
+    );
+  }
 }
 
-export async function POST(request: Request) {
+export async function POST(req: Request) {
+  const { userId } = await auth();
   const user = await currentUser();
-  if (!user)
+
+  if (!userId || !user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
 
-  const { name } = await request.json();
-  const code =
-    name.toUpperCase().replace(/\s+/g, "-") +
-    "-" +
-    Math.floor(1000 + Math.random() * 9000);
+  try {
+    const { name } = await req.json();
+    const cleanName = name.trim().toUpperCase().replace(/\s+/g, "-");
+    const code = `${cleanName}-${Math.floor(1000 + Math.random() * 9000)}`;
 
-  const group = await prisma.group.create({
-    data: {
-      name,
-      code,
-      members: { connect: { id: user.id } },
-    },
-  });
+    const group = await prisma.group.create({
+      data: {
+        name,
+        code,
+        members: {
+          connectOrCreate: {
+            where: { clerkId: userId },
+            create: {
+              clerkId: userId,
+              name: user.firstName || "User",
+              email: user.emailAddresses[0]?.emailAddress || "",
+            },
+          },
+        },
+      },
+    });
 
-  return NextResponse.json(group);
+    return NextResponse.json(group);
+  } catch (error) {
+    console.error("POST Error:", error);
+    return NextResponse.json(
+      { error: "Failed to create group" },
+      { status: 500 },
+    );
+  }
 }
