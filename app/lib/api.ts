@@ -1,4 +1,5 @@
-import { Group, Transaction } from "./types";
+import { getOrCreateGuestId } from "./identity";
+import { Group } from "./types";
 
 const fetcher = async (url: string, options?: RequestInit) => {
   const res = await fetch(url, options);
@@ -24,29 +25,61 @@ const fetcher = async (url: string, options?: RequestInit) => {
 export const syncUser = () =>
   fetch("/api/auth/sync", { method: "POST", cache: "no-store" });
 
-export const getGroups = (): Promise<Group[]> =>
-  fetcher("/api/groups", { cache: "no-store" });
+export const getGroups = async (): Promise<Group[]> => {
+  const guestId = getOrCreateGuestId();
 
-export const getGroupTransactions = (groupId: string): Promise<Transaction[]> =>
-  fetcher(`/api/settlements?groupId=${groupId}`, { cache: "no-store" });
+  const res = await fetch("/api/groups", {
+    cache: "no-store",
+    headers: {
+      "x-guest-id": guestId || "",
+    },
+  });
 
-export const createGroup = (name: string) =>
+  if (!res.ok) return [];
+  return res.json();
+};
+
+export const getGroupTransactions = async (groupId: string) => {
+  const guestId = getOrCreateGuestId();
+
+  return fetcher(`/api/groups/${groupId}/transactions`, {
+    headers: {
+      "x-guest-id": guestId,
+    },
+  });
+};
+
+export const createGroup = (name: string, pin?: string) =>
   fetcher("/api/groups", {
     method: "POST",
-    body: JSON.stringify({ name }),
+    body: JSON.stringify({ name, pin }),
   });
 
-export const joinGroup = (code: string) =>
+export const joinGroup = (data: {
+  code: string;
+  pin?: string;
+  guestName?: string;
+  guestId?: string;
+}) =>
   fetcher("/api/groups/join", {
-    method: "POST",
-    body: JSON.stringify({ code }),
-  });
-
-export const createExpense = (data: any) =>
-  fetcher("/api/expenses", {
     method: "POST",
     body: JSON.stringify(data),
   });
+
+export const createExpense = async (groupId: string, data: any) => {
+  const guestId = getOrCreateGuestId();
+
+  return fetcher(`/api/groups/${groupId}/transactions`, {
+    method: "POST",
+    headers: {
+      "x-guest-id": guestId || "",
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      ...data,
+    }),
+  });
+};
 
 export const createSettlement = (data: any) =>
   fetcher("/api/settlements", {

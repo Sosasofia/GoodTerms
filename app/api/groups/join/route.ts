@@ -1,28 +1,62 @@
 import { NextResponse } from "next/server";
-import { PrismaClient } from "@prisma/client";
-import { currentUser } from "@clerk/nextjs/server";
+import { auth, currentUser } from "@clerk/nextjs/server";
+import { prisma } from "../../../lib/prisma";
+export async function POST(req: Request) {
+  const { userId } = await auth();
+  const clerkUser = await currentUser();
 
-const prisma = new PrismaClient();
+  const { code, pin, guestName, guestId } = await req.json();
 
-export async function POST(request: Request) {
-  const user = await currentUser();
-  if (!user)
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const group = await prisma.group.findUnique({
+    where: { code },
+  });
 
-  const { code } = await request.json();
+  if (!group) {
+    return NextResponse.json({ error: "Group not found" }, { status: 404 });
+  }
 
-  try {
-    const group = await prisma.group.update({
-      where: { code },
-      data: {
-        members: { connect: { id: user.id } },
+  if (group.pin && group.pin !== pin) {
+    return NextResponse.json({ error: "Incorrect PIN" }, { status: 403 });
+  }
+
+  let dbUser;
+
+  if (userId && clerkUser) {
+    dbUser = await prisma.user.upsert({
+      where: { clerkId: userId },
+      create: {
+        clerkId: userId,
+        name: clerkUser.firstName || "User",
+        email: clerkUser.emailAddresses[0]?.emailAddress,
+      },
+      update: {},
+    });
+  } else if (guestId && guestName) {
+    dbUser = await prisma.user.upsert({
+      where: { guestId: guestId },
+      create: {
+        guestId: guestId,
+        name: guestName,
+      },
+      update: {
+        name: guestName,
       },
     });
-    return NextResponse.json(group);
-  } catch (error) {
+  } else {
     return NextResponse.json(
-      { error: "Group not found or already joined" },
-      { status: 404 }
+      { error: "Name required for guests" },
+      { status: 400 },
     );
   }
+
+  await prisma.group.update({
+    where: { id: group.id },
+    data: {
+      members: {
+        connect: { id: dbUser.id },
+      },
+    },
+  });
+
+  return NextResponse.json(group);
 }

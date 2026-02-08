@@ -7,6 +7,7 @@ export interface User {
 export interface Group {
   id: string;
   name: string;
+  pin?: string;
   code: string;
   members: User[];
 }

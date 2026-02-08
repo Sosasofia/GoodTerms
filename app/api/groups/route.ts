@@ -1,12 +1,14 @@
 import { NextResponse } from "next/server";
 import { auth, currentUser } from "@clerk/nextjs/server";
-import { prisma } from "../../lib/prisma";
+import { prisma } from "../../lib/prisma"; // Ensure this path matches your setup
 
-export async function GET() {
+export async function GET(req: Request) {
   const { userId } = await auth();
 
-  if (!userId) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const guestId = req.headers.get("x-guest-id");
+
+  if (!userId && !guestId) {
+    return NextResponse.json([]);
   }
 
   try {
@@ -14,7 +16,10 @@ export async function GET() {
       where: {
         members: {
           some: {
-            clerkId: userId,
+            OR: [
+              ...(userId ? [{ clerkId: userId }] : []),
+              ...(guestId ? [{ guestId: guestId }] : []),
+            ],
           },
         },
       },
@@ -45,7 +50,8 @@ export async function POST(req: Request) {
   }
 
   try {
-    const { name } = await req.json();
+    const { name, pin } = await req.json();
+
     const cleanName = name.trim().toUpperCase().replace(/\s+/g, "-");
     const code = `${cleanName}-${Math.floor(1000 + Math.random() * 9000)}`;
 
@@ -53,6 +59,7 @@ export async function POST(req: Request) {
       data: {
         name,
         code,
+        pin: pin || null,
         members: {
           connectOrCreate: {
             where: { clerkId: userId },

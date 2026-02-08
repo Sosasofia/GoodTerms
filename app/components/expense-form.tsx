@@ -16,22 +16,30 @@ export function ExpenseForm({ group, onSuccess }: ExpenseFormProps) {
     const [payerId, setPayerId] = useState(group.members[0]?.id || "");
     const [involved, setInvolved] = useState<string[]>(group.members.map(m => m.id));
 
-    async function handleSubmit(e: React.FormEvent) {
+    const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        if (!desc || !amount) return;
+        if (involved.length === 0) return;
 
-        await createExpense({
-            description: desc,
-            amount: parseFloat(amount),
-            note,
-            payerId,
-            involvedUserIds: involved,
-            groupId: group.id,
-        });
 
-        setDesc(""); setAmount(""); setNote("");
-        onSuccess();
-    }
+        try {
+            await createExpense(group.id, {
+                description: desc,
+                amount: parseFloat(amount),
+                payerId,
+                splits: involved.map((memberId) => ({
+                    debtorId: memberId,
+                    amount: parseFloat(amount) / involved.length,
+                })),
+            });
+
+
+            setAmount("");
+            onSuccess();
+        } catch (error) {
+            console.error("Failed to add expense", error);
+            alert("Failed to add expense");
+        }
+    };
 
     function toggleUser(userId: string) {
         if (involved.includes(userId)) setInvolved(involved.filter(id => id !== userId));
