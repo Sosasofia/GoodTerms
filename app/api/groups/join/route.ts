@@ -1,14 +1,16 @@
 import { NextResponse } from "next/server";
 import { auth, currentUser } from "@clerk/nextjs/server";
 import { prisma } from "../../../lib/prisma";
+
 export async function POST(req: Request) {
   const { userId } = await auth();
   const clerkUser = await currentUser();
 
-  const { code, pin, guestName, guestId } = await req.json();
+  const { code, pin, guestName, guestId, action } = await req.json();
 
   const group = await prisma.group.findUnique({
     where: { code },
+    include: { members: true },
   });
 
   if (!group) {
@@ -17,6 +19,35 @@ export async function POST(req: Request) {
 
   if (group.pin && group.pin !== pin) {
     return NextResponse.json({ error: "Incorrect PIN" }, { status: 403 });
+  }
+
+  if (!userId && guestName) {
+    const existingMember = group.members.find(
+      (m) => m.name.toLowerCase() === guestName.toLowerCase(),
+    );
+
+    if (existingMember) {
+      if (existingMember.clerkId) {
+        return NextResponse.json(
+          { error: "This name belongs to a registered user. Please sign in." },
+          { status: 400 },
+        );
+      }
+
+      if (action !== "claim") {
+        return NextResponse.json(
+          { error: "Name taken", requiresConfirmation: true },
+          { status: 409 },
+        );
+      }
+
+      await prisma.user.update({
+        where: { id: existingMember.id },
+        data: { guestId: guestId },
+      });
+
+      return NextResponse.json(group);
+    }
   }
 
   let dbUser;

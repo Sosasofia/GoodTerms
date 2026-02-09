@@ -1,18 +1,30 @@
 import { getOrCreateGuestId } from "./identity";
 import { Group } from "./types";
 
+class ApiError extends Error {
+  requiresConfirmation?: boolean;
+  constructor(message: string, requiresConfirmation?: boolean) {
+    super(message);
+    this.requiresConfirmation = requiresConfirmation;
+  }
+}
+
 const fetcher = async (url: string, options?: RequestInit) => {
   const res = await fetch(url, options);
 
   if (!res.ok) {
     let errorMessage = `Error ${res.status}: ${res.statusText}`;
+    let requiresConfirmation = false;
+
     try {
       const errorData = await res.json();
       errorMessage = errorData.error || errorMessage;
+      requiresConfirmation = errorData.requiresConfirmation;
     } catch (e) {
       console.error("Non-JSON error response:", e);
     }
-    throw new Error(errorMessage);
+
+    throw new ApiError(errorMessage, requiresConfirmation);
   }
 
   try {
@@ -60,6 +72,7 @@ export const joinGroup = (data: {
   pin?: string;
   guestName?: string;
   guestId?: string;
+  action?: "join" | "claim";
 }) =>
   fetcher("/api/groups/join", {
     method: "POST",
