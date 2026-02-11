@@ -101,7 +101,7 @@ export function SettlementForm({ group, items, viewerId, onSuccess }: Settlement
                                         debt.description
                                     )
                                 }
-                                className="bg-green-600 hover:bg-green-700 text-white px-3 py-1 rounded-lg text-sm font-bold"
+                                className="bg-green-600 hover:bg-green-700 text-white px-3 py-1 rounded-lg text-sm font-bold cursor-pointer"
                             >
                                 Pay ${debt.amount.toFixed(0)}
                             </button>

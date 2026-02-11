@@ -71,7 +71,7 @@ export function ExpenseForm({ group, onSuccess }: ExpenseFormProps) {
                         ))}
                     </div>
                 </div>
-                <button className="w-full bg-blue-600 text-white font-bold py-3 rounded-lg">Save Expense</button>
+                <button className="w-full bg-blue-600 text-white font-bold py-3 rounded-lg cursor-pointer">Save Expense</button>
             </form>
         </div>
     );
