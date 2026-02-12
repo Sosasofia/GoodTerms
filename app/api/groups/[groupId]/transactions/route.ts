@@ -1,16 +1,12 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
 import { prisma } from "../../../../lib/prisma";
 
-async function getGroupId(params: any) {
-  const p = await Promise.resolve(params);
-  return p.groupId || p.id;
-}
+type RouteContext = {
+  params: Promise<{ groupId: string }>;
+};
 
-export async function GET(
-  req: Request,
-  { params }: { params: { groupId: string } },
-) {
+export async function GET(req: NextRequest, { params }: RouteContext) {
   const { userId } = await auth();
   const guestId = req.headers.get("x-guest-id");
 
@@ -18,7 +14,7 @@ export async function GET(
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const groupId = await getGroupId(params);
+  const { groupId } = await params;
 
   try {
     const membership = await prisma.group.findFirst({
@@ -65,10 +61,7 @@ export async function GET(
   }
 }
 
-export async function POST(
-  request: Request,
-  { params }: { params: Promise<{ groupId: string }> },
-) {
+export async function POST(request: NextRequest, { params }: RouteContext) {
   try {
     const { groupId } = await params;
     const body = await request.json();
