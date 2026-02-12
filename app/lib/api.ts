@@ -34,9 +34,6 @@ const fetcher = async (url: string, options?: RequestInit) => {
   }
 };
 
-export const syncUser = () =>
-  fetch("/api/auth/sync", { method: "POST", cache: "no-store" });
-
 export const getGroups = async (): Promise<Group[]> => {
   const guestId = getOrCreateGuestId();
 
@@ -99,24 +96,3 @@ export const createSettlement = (data: any) =>
     method: "POST",
     body: JSON.stringify(data),
   });
-
-export async function paySettlement(data: {
-  amount: number;
-  viewerId: string;
-  receiverId: string;
-  splitId: string;
-  activeGroupId: string;
-}) {
-  const res = await fetch("/api/settlements", {
-    method: "POST",
-    body: JSON.stringify({
-      amount: data.amount,
-      senderId: data.viewerId,
-      receiverId: data.receiverId,
-      splitId: data.splitId,
-      groupId: data.activeGroupId,
-    }),
-  });
-  if (!res.ok) throw new Error("Failed to pay debt");
-  return res.json();
-}

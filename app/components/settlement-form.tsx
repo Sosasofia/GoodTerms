@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Group, Transaction } from "../lib/types";
 import { createSettlement } from "../lib/api";
 
@@ -20,10 +20,6 @@ export function SettlementForm({
   const [senderId, setSenderId] = useState(
     viewerId || group.members[0]?.id || "",
   );
-
-  // useEffect(() => {
-  //   if (viewerId) setSenderId(viewerId);
-  // }, [viewerId]);
 
   const myUnpaidDebts = items
     .filter((item) => item.type === "expense")

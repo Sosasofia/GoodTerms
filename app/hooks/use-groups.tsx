@@ -6,7 +6,7 @@ import { Group } from "../lib/types";
 import { getGroups } from "../lib/api";
 
 export function useGroups() {
-  const { user, isLoaded } = useUser();
+  const { isLoaded } = useUser();
   const [groups, setGroups] = useState<Group[]>([]);
   const [loading, setLoading] = useState(true);
 
