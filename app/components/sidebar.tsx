@@ -84,7 +84,6 @@ export function Sidebar({ groups, onOpenModal }: SidebarProps) {
             <div className="flex items-center gap-3 p-2 rounded-lg bg-slate-800/50 border border-slate-700/50">
               <div className="shrink-0">
                 <UserButton
-                  afterSignOutUrl="/groups"
                   appearance={{
                     elements: {
                       userButtonAvatarBox: "w-8 h-8 border-2 border-slate-600",
