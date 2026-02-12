@@ -18,12 +18,22 @@ export function HistoryList({ items }: { items: Transaction[] }) {
                                 <p className="text-xs text-slate-500">{item.payer.name} paid ${item.amount}</p>
                             </div>
                             <div className="text-right">
-                                {item.splits.map((s) => (
-                                    <div key={s.id} className={`text-xs ${s.isPaid ? "text-green-600 line-through" : "text-red-500"}`}>
-                                        {s.debtor.name} {s.isPaid ? "paid" : "owes"} ${s.amount.toFixed(0)}
-                                    </div>
-                                ))}
+                                {item.splits
+                                    .filter((split) => split.debtor.id !== item.payer.id)
+                                    .map((s: any) => (
+                                        <div
+                                            key={s.id}
+                                            className={`text-xs ${s.isPaid
+                                                ? "text-green-600 line-through"
+                                                : "text-red-500"
+                                                }`}
+                                        >
+                                            {s.debtor.name} {s.isPaid ? "paid" : "owes"} $
+                                            {s.amount.toFixed(0)}
+                                        </div>
+                                    ))}
                             </div>
+
                         </div>
                     ) : (
                         <div className="flex items-center gap-2 text-sm">

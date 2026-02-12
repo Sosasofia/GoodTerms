@@ -20,7 +20,6 @@ export function ExpenseForm({ group, onSuccess }: ExpenseFormProps) {
         e.preventDefault();
         if (involved.length === 0) return;
 
-
         try {
             await createExpense(group.id, {
                 description: desc,

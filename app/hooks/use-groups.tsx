@@ -6,24 +6,28 @@ import { Group } from "../lib/types";
 import { getGroups } from "../lib/api";
 
 export function useGroups() {
-    const { user } = useUser();
+    const { user, isLoaded } = useUser();
     const [groups, setGroups] = useState<Group[]>([]);
     const [loading, setLoading] = useState(true);
 
     const refreshGroups = useCallback(async () => {
+        if (!isLoaded) return;
+
         try {
+            setLoading(true);
             const data = await getGroups();
-            setGroups(data);
+            setGroups(data || []);
         } catch (error) {
-            console.error("Failed to fetch groups:", error);
+            console.error("Failed to fetch groups", error);
+            setGroups([]);
         } finally {
             setLoading(false);
         }
-    }, []);
+    }, [user?.id, isLoaded]);
 
     useEffect(() => {
         refreshGroups();
-    }, [refreshGroups, user]);
+    }, [refreshGroups]);
 
     return { groups, loading, refreshGroups };
 }

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { Group, Transaction } from "../lib/types";
 import { createSettlement } from "../lib/api";
 
@@ -18,27 +18,26 @@ export function SettlementForm({ group, items, viewerId, onSuccess }: Settlement
         if (viewerId) setSenderId(viewerId);
     }, [viewerId]);
 
-    const myUnpaidDebts = useMemo(() => {
-        return items
-            .filter((i) => i.type === "expense")
-            .flatMap((e: any) => e.splits)
-            .filter((s: any) => s.debtorId === senderId && !s.isPaid)
-            .map((s: any) => {
-                const parent = items.find((i) => i.id === s.expenseId);
-                const payer = group.members.find((m) => m.id === (parent as any)?.payerId);
-                return {
+    const myUnpaidDebts = items
+        .filter((item) => item.type === "expense")
+        .flatMap((item) => {
+            return item.splits
+                .filter((s) => s.debtor.id === senderId)
+                .filter((s) => item.payer.id !== senderId)
+                .filter((s) => !s.isPaid)
+                .map((s) => ({
                     ...s,
-                    description: (parent as any)?.description || "Expense",
-                    receiver: payer
-                };
-            });
-    }, [items, senderId, group.members]);
+                    expenseDescription: item.description,
+                    receiverName: item.payer?.name,
+                    receiverId: item.payer?.id,
+                }));
+        });
 
-    async function handlePayDebt(splitId: number, amount: number, receiverId: string, description: string) {
+    async function handlePayDebt(splitId: string, amount: number, receiverId: string, description: string) {
         if (!confirm(`Mark "${description}" ($${amount}) as PAID?`)) return;
 
         if (!receiverId) {
-            alert("Error: Cannot identify who to pay. The data might be incomplete.");
+            alert("Error: Cannot identify who to pay.");
             return;
         }
 
@@ -87,9 +86,9 @@ export function SettlementForm({ group, items, viewerId, onSuccess }: Settlement
                             className="flex justify-between items-center border p-3 rounded-lg hover:bg-slate-50"
                         >
                             <div>
-                                <div className="font-bold">{debt.description}</div>
+                                <div className="font-bold">{debt.expenseDescription}</div>
                                 <div className="text-xs text-slate-500">
-                                    Owed to {debt.receiver?.name}
+                                    Owed to {debt.receiverName}
                                 </div>
                             </div>
                             <button
@@ -97,8 +96,8 @@ export function SettlementForm({ group, items, viewerId, onSuccess }: Settlement
                                     handlePayDebt(
                                         debt.id,
                                         debt.amount,
-                                        debt.receiver?.id,
-                                        debt.description
+                                        debt.receiverId,
+                                        debt.expenseDescription
                                     )
                                 }
                                 className="bg-green-600 hover:bg-green-700 text-white px-3 py-1 rounded-lg text-sm font-bold cursor-pointer"

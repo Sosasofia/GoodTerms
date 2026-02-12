@@ -66,44 +66,56 @@ export async function GET(
 }
 
 export async function POST(
-  req: Request,
-  { params }: { params: { groupId: string } },
+  request: Request,
+  { params }: { params: Promise<{ groupId: string }> },
 ) {
-  const { userId } = await auth();
-  const guestId = req.headers.get("x-guest-id");
-
-  if (!userId && !guestId) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
-
-  const groupId = await getGroupId(params);
-
   try {
-    const body = await req.json();
+    const { groupId } = await params;
+    const body = await request.json();
     const { description, amount, payerId, splits } = body;
 
-    const group = await prisma.group.findUnique({
-      where: { id: groupId },
-    });
-
-    if (!group) {
-      return NextResponse.json({ error: "Group not found" }, { status: 404 });
+    const parsedAmount = parseFloat(amount);
+    if (isNaN(parsedAmount) || parsedAmount <= 0) {
+      return NextResponse.json({ error: "Invalid amount." }, { status: 400 });
     }
+    if (!description || !payerId) {
+      return NextResponse.json(
+        { error: "Missing description or payer." },
+        { status: 400 },
+      );
+    }
+
+    if (!splits || !Array.isArray(splits) || splits.length === 0) {
+      return NextResponse.json(
+        { error: "Splits are required." },
+        { status: 400 },
+      );
+    }
+
+    const splitData = splits.map((split: any) => {
+      const debtorId = split.debtorId || split.id;
+
+      if (!debtorId) {
+        throw new Error(`Missing User ID for split amount: ${split.amount}`);
+      }
+
+      return {
+        amount: parseFloat(split.amount),
+        debtor: { connect: { id: debtorId } },
+        isPaid: false,
+      };
+    });
 
     const transaction = await prisma.transaction.create({
       data: {
         description,
-        amount: parseFloat(amount),
+        amount: parsedAmount,
         type: "expense",
         date: new Date(),
         group: { connect: { id: groupId } },
         payer: { connect: { id: payerId } },
         splits: {
-          create: splits.map((s: any) => ({
-            amount: parseFloat(s.amount),
-            debtor: { connect: { id: s.debtorId } },
-            isPaid: false,
-          })),
+          create: splitData,
         },
       },
       include: {
@@ -113,11 +125,11 @@ export async function POST(
     });
 
     return NextResponse.json(transaction);
-  } catch (error) {
-    console.error("POST Transaction Error:", error);
+  } catch (error: any) {
+    console.error("Transaction Error:", error.message);
     return NextResponse.json(
-      { error: "Failed to create transaction" },
-      { status: 500 },
+      { error: error.message || "Failed to create transaction" },
+      { status: 400 },
     );
   }
 }
