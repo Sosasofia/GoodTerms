@@ -20,7 +20,7 @@ export function Sidebar({ groups, loading, onOpenModal }: SidebarProps) {
   const { user } = useUser();
 
   return (
-    <div className="w-64 bg-[#0F172A] text-white flex flex-col h-screen border-r border-slate-800 shrink-0">
+    <div className="w-full h-full bg-[#0F172A] text-white flex flex-col border-r border-slate-800 shrink-0">
       <div className="p-6">
         <h1 className="text-xl font-bold bg-clip-text text-transparent bg-linear-to-r from-blue-400 to-blue-200">
           GoodTerms
