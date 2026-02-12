@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { Group, Transaction } from "../lib/types";
 import { createSettlement } from "../lib/api";
+import { LoadingSpinner } from "./loading-spinner";
 
 interface SettlementFormProps {
   group: Group;
@@ -21,7 +22,9 @@ export function SettlementForm({
     viewerId || group.members[0]?.id || "",
   );
 
-  const myUnpaidDebts = items
+  const [processingId, setProcessingId] = useState<string | null>(null);
+
+  const unpaidDebts = items
     .filter((item) => item.type === "expense")
     .flatMap((item) => {
       return item.splits
@@ -36,18 +39,21 @@ export function SettlementForm({
         }));
     });
 
-  async function handlePayDebt(
+  async function handleSubmit(
     splitId: string,
     amount: number,
     receiverId: string,
     description: string,
   ) {
-    if (!confirm(`Mark "${description}" ($${amount}) as PAID?`)) return;
+    if (!confirm(`Mark "${description}" ($${amount.toFixed(2)}) as PAID?`))
+      return;
 
     if (!receiverId) {
       alert("Error: Cannot identify who to pay.");
       return;
     }
+
+    setProcessingId(splitId);
 
     try {
       await createSettlement({
@@ -60,6 +66,8 @@ export function SettlementForm({
       onSuccess();
     } catch (err: any) {
       alert("Failed to pay: " + err.message);
+    } finally {
+      setProcessingId(null);
     }
   }
 
@@ -84,36 +92,46 @@ export function SettlementForm({
 
       <h3 className="font-bold text-slate-700 mb-2">Unpaid Debts</h3>
 
-      {myUnpaidDebts.length === 0 ? (
+      {unpaidDebts.length === 0 ? (
         <p className="text-slate-400 italic">No pending debts for this user.</p>
       ) : (
         <div className="space-y-3">
-          {myUnpaidDebts.map((debt: any) => (
-            <div
-              key={debt.id}
-              className="flex justify-between items-center border p-3 rounded-lg hover:bg-slate-50"
-            >
-              <div>
-                <div className="font-bold">{debt.expenseDescription}</div>
-                <div className="text-xs text-slate-500">
-                  Owed to {debt.receiverName}
-                </div>
-              </div>
-              <button
-                onClick={() =>
-                  handlePayDebt(
-                    debt.id,
-                    debt.amount,
-                    debt.receiverId,
-                    debt.expenseDescription,
-                  )
-                }
-                className="bg-green-600 hover:bg-green-700 text-white px-3 py-1 rounded-lg text-sm font-bold cursor-pointer"
+          {unpaidDebts.map((debt: any) => {
+            const isItemLoading = processingId === debt.id;
+            const isLoading = processingId !== null;
+
+            return (
+              <div
+                key={debt.id}
+                className="flex justify-between items-center border p-3 rounded-lg hover:bg-slate-50"
               >
-                Pay ${debt.amount.toFixed(0)}
-              </button>
-            </div>
-          ))}
+                <div>
+                  <div className="font-bold">{debt.expenseDescription}</div>
+                  <div className="text-xs text-slate-500">
+                    Owed to {debt.receiverName}
+                  </div>
+                </div>
+                <button
+                  disabled={isLoading}
+                  onClick={() =>
+                    handleSubmit(
+                      debt.id,
+                      debt.amount,
+                      debt.receiverId,
+                      debt.expenseDescription,
+                    )
+                  }
+                  className="bg-green-600 hover:bg-green-700 disabled:bg-slate-300 text-white px-3 py-1 rounded-lg text-sm font-bold cursor-pointer transition-colors min-w-25 flex justify-center"
+                >
+                  {isItemLoading ? (
+                    <LoadingSpinner className="h-4 w-4" />
+                  ) : (
+                    `Pay $${debt.amount.toFixed(2)}`
+                  )}
+                </button>
+              </div>
+            );
+          })}
         </div>
       )}
     </div>

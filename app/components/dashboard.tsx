@@ -11,6 +11,7 @@ interface DashboardProps {
   items: Transaction[];
   viewerId: string;
   onUpdate: () => void;
+  loading?: boolean;
 }
 
 export function Dashboard({
@@ -18,6 +19,7 @@ export function Dashboard({
   items,
   viewerId,
   onUpdate,
+  loading,
 }: DashboardProps) {
   const [activeTab, setActiveTab] = useState<"expense" | "settlement">(
     "expense",
@@ -138,6 +140,46 @@ export function Dashboard({
       </div>
 
       <HistoryList items={items} />
+    </div>
+  );
+}
+
+export function DashboardSkeleton() {
+  return (
+    <div className="max-w-2xl mx-auto animate-pulse">
+      <div className="flex justify-between items-end mb-6 border-b pb-4">
+        <div>
+          <div className="h-9 w-48 bg-slate-200 rounded-md mb-3" />
+          <div className="flex gap-3">
+            <div className="h-6 w-32 bg-slate-100 rounded-md" />
+            <div className="h-6 w-24 bg-yellow-50 rounded-md" />
+          </div>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-3 gap-2 mb-8">
+        {[1, 2, 3].map((i) => (
+          <div
+            key={i}
+            className="p-2 rounded-lg border border-slate-100 bg-slate-50/50"
+          >
+            <div className="h-4 w-12 bg-slate-200 rounded mx-auto mb-2" />
+            <div className="h-5 w-8 bg-slate-300 rounded mx-auto" />
+          </div>
+        ))}
+      </div>
+
+      <div className="h-12 w-full bg-slate-100 rounded-lg mb-8" />
+
+      <div className="space-y-4">
+        <div className="h-6 w-24 bg-slate-200 rounded mb-4" />
+        {[1, 2, 3, 4].map((i) => (
+          <div
+            key={i}
+            className="h-20 w-full bg-slate-50 border border-slate-100 rounded-xl"
+          />
+        ))}
+      </div>
     </div>
   );
 }

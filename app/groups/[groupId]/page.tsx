@@ -3,7 +3,7 @@
 import { useEffect, useState, use } from "react";
 import { useUser } from "@clerk/nextjs";
 import { getGroupTransactions } from "../../lib/api";
-import { Dashboard } from "../../components/dashboard";
+import { Dashboard, DashboardSkeleton } from "../../components/dashboard";
 import { useGroups } from "../../hooks/use-groups";
 import { useRouter } from "next/navigation";
 import { getOrCreateGuestId } from "../../lib/identity";
@@ -15,10 +15,10 @@ export default function GroupPage({
 }) {
   const { groupId } = use(params);
   const { user } = useUser();
+  const { groups, loading: groupsLoading } = useGroups();
 
-  const { groups, loading } = useGroups();
-  const router = useRouter();
   const [items, setItems] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
 
   const activeGroup = groups.find((g) => g.id === groupId);
 
@@ -26,27 +26,26 @@ export default function GroupPage({
     if (user?.id && m.clerkId === user.id) return true;
 
     const guestId = getOrCreateGuestId();
-    if (guestId && m.id === guestId) return true;
 
-    return false;
+    return guestId && m.id === guestId;
   });
 
   const viewerId = dbUser?.id || "";
 
   useEffect(() => {
-    if (!loading && !activeGroup) {
-      router.push("/groups");
-    }
-  }, [loading, activeGroup, router]);
-
-  useEffect(() => {
     if (groupId) {
-      getGroupTransactions(groupId).then(setItems);
+      getGroupTransactions(groupId)
+        .then(setItems)
+        .finally(() => setIsLoading(false));
     }
   }, [groupId]);
 
-  if (loading) {
-    return <div className="p-8 text-slate-400">Loading group...</div>;
+  if (groupsLoading || (isLoading && items.length === 0)) {
+    return (
+      <div className="p-4 md:p-8">
+        <DashboardSkeleton />
+      </div>
+    );
   }
 
   if (!activeGroup) return null;
@@ -57,7 +56,12 @@ export default function GroupPage({
         group={activeGroup}
         items={items}
         viewerId={viewerId}
-        onUpdate={() => getGroupTransactions(groupId).then(setItems)}
+        onUpdate={() => {
+          setIsLoading(true);
+          getGroupTransactions(groupId)
+            .then(setItems)
+            .finally(() => setIsLoading(false));
+        }}
       />
     </div>
   );

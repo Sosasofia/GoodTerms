@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { Group } from "../lib/types";
 import { createExpense } from "../lib/api";
+import { LoadingSpinner } from "./loading-spinner";
 
 interface ExpenseFormProps {
   group: Group;
@@ -17,10 +18,12 @@ export function ExpenseForm({ group, onSuccess }: ExpenseFormProps) {
   const [involved, setInvolved] = useState<string[]>(
     group.members.map((m) => m.id),
   );
+  const [isLoading, setIsLoading] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (involved.length === 0) return;
+    setIsLoading(true);
 
     try {
       await createExpense(group.id, {
@@ -34,6 +37,7 @@ export function ExpenseForm({ group, onSuccess }: ExpenseFormProps) {
       });
 
       setAmount("");
+      setIsLoading(false);
       onSuccess();
     } catch (error) {
       console.error("Failed to add expense", error);
@@ -106,7 +110,7 @@ export function ExpenseForm({ group, onSuccess }: ExpenseFormProps) {
           </div>
         </div>
         <button className="w-full bg-blue-600 text-white font-bold py-3 rounded-lg cursor-pointer">
-          Save Expense
+          {isLoading ? <LoadingSpinner className="mx-auto" /> : "Save Expense"}
         </button>
       </form>
     </div>

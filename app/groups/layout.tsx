@@ -10,12 +10,12 @@ export default function GroupsLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const { groups, refreshGroups } = useGroups();
+  const { groups, refreshGroups, loading } = useGroups();
   const [modalMode, setModalMode] = useState<"create" | "join" | null>(null);
 
   return (
     <div className="flex min-h-screen bg-slate-100 font-sans text-slate-900">
-      <Sidebar groups={groups} onOpenModal={setModalMode} />
+      <Sidebar groups={groups} loading={loading} onOpenModal={setModalMode} />
 
       <main className="flex-1 overflow-y-auto h-screen">{children}</main>
 
