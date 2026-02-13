@@ -8,48 +8,64 @@ datasource db {
 }
 
 model User {
-  id        Int      @id @default(autoincrement())
-  name      String   @unique
+  id        String   @id @default(uuid())
+  clerkId   String?  @unique
+  guestId   String?  @unique
+  name      String
+  email     String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  groups    Group[]  @relation("GroupMembers")
+
+  paidTransactions     Transaction[] @relation("Payer")
+  sentTransactions     Transaction[] @relation("Sender")
+  receivedTransactions Transaction[] @relation("Receiver")
   
-  // Expenses (Creating Debt)
-  expensesPaid   Expense[] @relation("Payer")
-  debtsOwed      Split[]   @relation("Debtor")
-  
-  // Settlements (Clearing Debt)
-  sentMoney      Settlement[] @relation("Sender")
-  receivedMoney  Settlement[] @relation("Receiver")
+  splits               Split[]       @relation("Debtor")
 }
 
-model Expense {
-  id          Int      @id @default(autoincrement())
+model Group {
+  id        String   @id @default(uuid())
+  name      String
+  code      String   @unique
+  pin       String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  members      User[]        @relation("GroupMembers")
+  transactions Transaction[]
+}
+
+model Transaction {
+  id          String   @id @default(uuid())
   description String
   amount      Float
-  createdAt   DateTime @default(now())
-  
-  payerId     Int
-  payer       User     @relation("Payer", fields: [payerId], references: [id])
+  date        DateTime @default(now())
+  type        String   @default("expense")
+
+  groupId     String
+  group       Group    @relation(fields: [groupId], references: [id], onDelete: Cascade)
+
+  payerId     String?
+  payer       User?    @relation("Payer", fields: [payerId], references: [id])
+
+  senderId    String?
+  sender      User?    @relation("Sender", fields: [senderId], references: [id])
+  receiverId  String?
+  receiver    User?    @relation("Receiver", fields: [receiverId], references: [id])
+
   splits      Split[]
 }
 
 model Split {
-  id        Int     @id @default(autoincrement())
-  amount    Float
-  isPaid    Boolean @default(false)  
-  
-  expenseId Int
-  expense   Expense @relation(fields: [expenseId], references: [id])
-  debtorId  Int
-  debtor    User    @relation("Debtor", fields: [debtorId], references: [id])
-}
+  id            String      @id @default(uuid())
+  amount        Float
+  isPaid        Boolean     @default(false)
 
-model Settlement {
-  id          Int      @id @default(autoincrement())
-  amount      Float
-  createdAt   DateTime @default(now())
+  transactionId String
+  transaction   Transaction @relation(fields: [transactionId], references: [id], onDelete: Cascade)
 
-  senderId    Int      // Who is paying back?
-  sender      User     @relation("Sender", fields: [senderId], references: [id])
-
-  receiverId  Int      // Who gets the money?
-  receiver    User     @relation("Receiver", fields: [receiverId], references: [id])
+  debtorId      String
+  debtor        User        @relation("Debtor", fields: [debtorId], references: [id])
 }
