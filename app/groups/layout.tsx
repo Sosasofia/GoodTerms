@@ -1,9 +1,13 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { useUser } from "@clerk/nextjs";
 import { Sidebar } from "../components/sidebar";
 import { GroupModal } from "../components/group-modal";
 import { useGroups } from "../hooks/use-groups";
+import { getDemoData, joinGroup } from "../lib/api";
+import { getOrCreateGuestId } from "../lib/identity";
 
 export default function GroupsLayout({
   children,
@@ -13,6 +17,44 @@ export default function GroupsLayout({
   const { groups, refreshGroups, loading } = useGroups();
   const [modalMode, setModalMode] = useState<"create" | "join" | null>(null);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [demoLoading, setDemoLoading] = useState(false);
+  const { user, isLoaded } = useUser();
+  const router = useRouter();
+
+  const handleDemo = async () => {
+    if (!isLoaded || demoLoading) return;
+
+    setDemoLoading(true);
+
+    try {
+      await getDemoData();
+
+      let joinedGroup: { id?: string } | null = null;
+
+      if (user) {
+        joinedGroup = await joinGroup({ code: "BALI-2025" });
+      } else {
+        const guestId = getOrCreateGuestId();
+        const guestName = localStorage.getItem("guest_name") || "Demo User";
+        localStorage.setItem("guest_name", guestName);
+        joinedGroup = await joinGroup({
+          code: "BALI-2025",
+          guestId,
+          guestName,
+        });
+      }
+
+      await refreshGroups();
+
+      if (joinedGroup?.id) {
+        router.push(`/groups/${joinedGroup.id}`);
+      }
+    } catch (error) {
+      console.error("Failed to load demo data", error);
+    } finally {
+      setDemoLoading(false);
+    }
+  };
 
   return (
     <div className="flex h-screen flex-col md:flex-row bg-slate-50 overflow-hidden">
@@ -75,6 +117,11 @@ export default function GroupsLayout({
                   setModalMode(mode);
                   setIsMobileMenuOpen(false);
                 }}
+                onDemo={() => {
+                  setIsMobileMenuOpen(false);
+                  handleDemo();
+                }}
+                demoLoading={demoLoading}
               />
             </div>
           </div>
@@ -82,7 +129,13 @@ export default function GroupsLayout({
       )}
 
       <div className="hidden md:flex w-64 flex-col border-r border-slate-200 bg-slate-900 text-white flex-shrink-0">
-        <Sidebar groups={groups} loading={loading} onOpenModal={setModalMode} />
+        <Sidebar
+          groups={groups}
+          loading={loading}
+          onOpenModal={setModalMode}
+          onDemo={handleDemo}
+          demoLoading={demoLoading}
+        />
       </div>
 
       <main className="flex-1 overflow-y-auto h-full pt-16 md:pt-0 bg-slate-50 relative">

@@ -76,6 +76,8 @@ export const joinGroup = (data: {
     body: JSON.stringify(data),
   });
 
+export const getDemoData = () => fetcher("/api/demo");
+
 export const createExpense = async (groupId: string, data: any) => {
   const guestId = getOrCreateGuestId();
 

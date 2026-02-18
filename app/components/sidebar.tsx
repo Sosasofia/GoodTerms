@@ -13,9 +13,17 @@ interface SidebarProps {
   groups: Group[];
   loading?: boolean;
   onOpenModal: (mode: "create" | "join") => void;
+  onDemo: () => void;
+  demoLoading?: boolean;
 }
 
-export function Sidebar({ groups, loading, onOpenModal }: SidebarProps) {
+export function Sidebar({
+  groups,
+  loading,
+  onOpenModal,
+  onDemo,
+  demoLoading,
+}: SidebarProps) {
   const pathname = usePathname();
   const { user } = useUser();
 
@@ -80,6 +88,14 @@ export function Sidebar({ groups, loading, onOpenModal }: SidebarProps) {
           className="w-full mb-6 bg-transparent hover:bg-slate-800 text-slate-400 text-xs font-bold py-2 px-4 rounded border border-slate-700 transition-colors"
         >
           → Join via Code
+        </button>
+
+        <button
+          onClick={onDemo}
+          disabled={demoLoading}
+          className="w-full mb-6 bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold py-2 px-4 rounded border border-blue-500 transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
+        >
+          {demoLoading ? "Loading Demo..." : "Demo"}
         </button>
 
         <div className="pt-4 border-t border-slate-800">
