@@ -21,6 +21,8 @@ export default function GroupsLayout({
   const { user, isLoaded } = useUser();
   const router = useRouter();
 
+  const isDemoMember = groups.some((g) => g.code === "BALI-2025");
+
   const handleDemo = async () => {
     if (!isLoaded || demoLoading) return;
 
@@ -158,6 +160,7 @@ export default function GroupsLayout({
                   handleDemo();
                 }}
                 demoLoading={demoLoading}
+                hideDemoButton={isDemoMember}
               />
             </div>
           </div>
@@ -171,6 +174,7 @@ export default function GroupsLayout({
           onOpenModal={setModalMode}
           onDemo={handleDemo}
           demoLoading={demoLoading}
+          hideDemoButton={isDemoMember}
         />
       </div>
 
