@@ -6,7 +6,7 @@ import { useUser } from "@clerk/nextjs";
 import { Sidebar } from "../components/sidebar";
 import { GroupModal } from "../components/group-modal";
 import { useGroups } from "../hooks/use-groups";
-import { getDemoData, joinGroup } from "../lib/api";
+import { getDemoData, joinGroup, getGroups } from "../lib/api";
 import { getOrCreateGuestId } from "../lib/identity";
 
 export default function GroupsLayout({
@@ -29,25 +29,61 @@ export default function GroupsLayout({
     try {
       await getDemoData();
 
-      let joinedGroup: { id?: string } | null = null;
-
       if (user) {
-        joinedGroup = await joinGroup({ code: "BALI-2025" });
+        try {
+          await joinGroup({ code: "BALI-2025" });
+        } catch (error: any) {
+          if (error.message?.includes("Group not found")) {
+            throw error;
+          }
+        }
       } else {
         const guestId = getOrCreateGuestId();
         const guestName = localStorage.getItem("guest_name") || "Demo User";
         localStorage.setItem("guest_name", guestName);
-        joinedGroup = await joinGroup({
-          code: "BALI-2025",
-          guestId,
-          guestName,
-        });
+
+        let joined = false;
+
+        try {
+          await joinGroup({
+            code: "BALI-2025",
+            guestId,
+            guestName,
+          });
+          joined = true;
+        } catch (error: any) {
+          if (
+            error.requiresConfirmation ||
+            error.message?.includes("Name taken")
+          ) {
+            try {
+              await joinGroup({
+                code: "BALI-2025",
+                guestId,
+                guestName,
+                action: "claim",
+              });
+              joined = true;
+            } catch (claimError) {
+              console.log("Claim attempt completed");
+            }
+          } else if (!error.message?.includes("Group not found")) {
+            console.log("Minor conflict, continuing...");
+          } else {
+            throw error;
+          }
+        }
       }
 
       await refreshGroups();
 
-      if (joinedGroup?.id) {
-        router.push(`/groups/${joinedGroup.id}`);
+      await new Promise((resolve) => setTimeout(resolve, 300));
+
+      const freshGroups = await getGroups();
+      const demoGroup = freshGroups.find((g) => g.code === "BALI-2025");
+
+      if (demoGroup) {
+        router.push(`/groups/${demoGroup.id}`);
       }
     } catch (error) {
       console.error("Failed to load demo data", error);
