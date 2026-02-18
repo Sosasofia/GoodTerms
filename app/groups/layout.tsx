@@ -128,7 +128,7 @@ export default function GroupsLayout({
         </div>
       )}
 
-      <div className="hidden md:flex w-64 flex-col border-r border-slate-200 bg-slate-900 text-white flex-shrink-0">
+      <div className="hidden md:flex w-64 flex-col border-r border-slate-200 bg-slate-900 text-white shrink-0">
         <Sidebar
           groups={groups}
           loading={loading}
