@@ -12,6 +12,7 @@ export async function demoSeedExists() {
 
 export async function seedDemoData() {
   const exists = await demoSeedExists();
+
   if (exists) {
     return await getDemoData();
   }
@@ -37,7 +38,7 @@ export async function seedDemoData() {
     ),
   );
 
-  const bailiGroup = await prisma.group.create({
+  const baliGroup = await prisma.group.create({
     data: {
       name: "Bali Trip 2025",
       code: "BALI-2025",
@@ -54,7 +55,7 @@ export async function seedDemoData() {
     include: { members: true },
   });
 
-  const bailiExpenses = [
+  const baliExpenses = [
     {
       description: "Villa rental (4 nights)",
       amount: 800,
@@ -112,15 +113,15 @@ export async function seedDemoData() {
     },
   ];
 
-  const bailiTransactions = await Promise.all(
-    bailiExpenses.map((expense) =>
+  const baliTransactions = await Promise.all(
+    baliExpenses.map((expense) =>
       prisma.transaction.create({
         data: {
           description: expense.description,
           amount: expense.amount,
           type: "expense",
           date: new Date(2025, 0, 15),
-          groupId: bailiGroup.id,
+          groupId: baliGroup.id,
           payerId: expense.payerId,
           splits: {
             create: expense.splits,
@@ -134,30 +135,30 @@ export async function seedDemoData() {
     ),
   );
 
-  const bailiSettlements = [
+  const baliSettlements = [
     {
       amount: 200,
       senderId: users[1].id,
       receiverId: users[0].id,
-      splitId: bailiTransactions[0].splits[1].id,
+      splitId: baliTransactions[0].splits[1].id,
     },
     {
       amount: 240,
       senderId: users[0].id,
       receiverId: users[1].id,
-      splitId: bailiTransactions[1].splits[0].id,
+      splitId: baliTransactions[1].splits[0].id,
     },
   ];
 
   await Promise.all(
-    bailiSettlements.map((settlement) =>
+    baliSettlements.map((settlement) =>
       prisma.transaction.create({
         data: {
           description: "Payment",
           amount: settlement.amount,
           type: "settlement",
           date: new Date(2025, 0, 20),
-          groupId: bailiGroup.id,
+          groupId: baliGroup.id,
           senderId: settlement.senderId,
           receiverId: settlement.receiverId,
         },
@@ -166,228 +167,20 @@ export async function seedDemoData() {
   );
 
   await Promise.all(
-    bailiSettlements.map((settlement) =>
+    baliSettlements.map((settlement) =>
       prisma.split.update({
         where: { id: settlement.splitId },
         data: { isPaid: true },
       }),
     ),
   );
-
-  const apartmentGroup = await prisma.group.create({
-    data: {
-      name: "Apartment Q1 Rent",
-      code: "APART-Q1",
-      pin: "1234",
-      members: {
-        connect: [
-          { id: users[0].id },
-          { id: users[1].id },
-          { id: users[4].id },
-        ],
-      },
-    },
-    include: { members: true },
-  });
-
-  const apartmentExpenses = [
-    {
-      description: "January Rent",
-      amount: 3000,
-      payerId: users[0].id,
-      splits: [
-        { debtorId: users[0].id, amount: 1000 },
-        { debtorId: users[1].id, amount: 1000 },
-        { debtorId: users[4].id, amount: 1000 },
-      ],
-    },
-    {
-      description: "Internet & Utilities",
-      amount: 180,
-      payerId: users[1].id,
-      splits: [
-        { debtorId: users[0].id, amount: 60 },
-        { debtorId: users[1].id, amount: 60 },
-        { debtorId: users[4].id, amount: 60 },
-      ],
-    },
-    {
-      description: "Groceries",
-      amount: 150,
-      payerId: users[4].id,
-      splits: [
-        { debtorId: users[0].id, amount: 50 },
-        { debtorId: users[1].id, amount: 50 },
-        { debtorId: users[4].id, amount: 50 },
-      ],
-    },
-    {
-      description: "February Rent",
-      amount: 3000,
-      payerId: users[1].id,
-      splits: [
-        { debtorId: users[0].id, amount: 1000 },
-        { debtorId: users[1].id, amount: 1000 },
-        { debtorId: users[4].id, amount: 1000 },
-      ],
-    },
-  ];
-
-  const apartmentTransactions = await Promise.all(
-    apartmentExpenses.map((expense) =>
-      prisma.transaction.create({
-        data: {
-          description: expense.description,
-          amount: expense.amount,
-          type: "expense",
-          date: new Date(2025, apartmentExpenses.indexOf(expense), 1),
-          groupId: apartmentGroup.id,
-          payerId: expense.payerId,
-          splits: {
-            create: expense.splits,
-          },
-        },
-        include: {
-          splits: { include: { debtor: true } },
-          payer: true,
-        },
-      }),
-    ),
-  );
-
-  await Promise.all([
-    prisma.transaction.create({
-      data: {
-        description: "Payment",
-        amount: 1000,
-        type: "settlement",
-        date: new Date(2025, 0, 25),
-        groupId: apartmentGroup.id,
-        senderId: users[0].id,
-        receiverId: users[1].id,
-      },
-    }),
-    prisma.transaction.create({
-      data: {
-        description: "Payment",
-        amount: 60,
-        type: "settlement",
-        date: new Date(2025, 0, 26),
-        groupId: apartmentGroup.id,
-        senderId: users[4].id,
-        receiverId: users[1].id,
-      },
-    }),
-  ]);
-
-  const brunchGroup = await prisma.group.create({
-    data: {
-      name: "Weekend Brunch Club",
-      code: "BRUNCH-NYC",
-      pin: null,
-      members: {
-        connect: [
-          { id: users[2].id },
-          { id: users[4].id },
-          { id: users[5].id },
-        ],
-      },
-    },
-    include: { members: true },
-  });
-
-  const brunchExpenses = [
-    {
-      description: "Brunch at Balthazar (5 people)",
-      amount: 180,
-      payerId: users[2].id,
-      splits: [
-        { debtorId: users[2].id, amount: 60 },
-        { debtorId: users[4].id, amount: 60 },
-        { debtorId: users[5].id, amount: 60 },
-      ],
-    },
-    {
-      description: "Coffee & pastries",
-      amount: 45,
-      payerId: users[4].id,
-      splits: [
-        { debtorId: users[2].id, amount: 15 },
-        { debtorId: users[4].id, amount: 15 },
-        { debtorId: users[5].id, amount: 15 },
-      ],
-    },
-    {
-      description: "Brunch at Via Carota",
-      amount: 210,
-      payerId: users[5].id,
-      splits: [
-        { debtorId: users[2].id, amount: 70 },
-        { debtorId: users[4].id, amount: 70 },
-        { debtorId: users[5].id, amount: 70 },
-      ],
-    },
-  ];
-
-  const brunchTransactions = await Promise.all(
-    brunchExpenses.map((expense, idx) =>
-      prisma.transaction.create({
-        data: {
-          description: expense.description,
-          amount: expense.amount,
-          type: "expense",
-          date: new Date(2025, 1, idx * 7 + 1),
-          groupId: brunchGroup.id,
-          payerId: expense.payerId,
-          splits: {
-            create: expense.splits,
-          },
-        },
-        include: {
-          splits: { include: { debtor: true } },
-          payer: true,
-        },
-      }),
-    ),
-  );
-
-  await Promise.all([
-    prisma.transaction.create({
-      data: {
-        description: "Payment",
-        amount: 60,
-        type: "settlement",
-        date: new Date(2025, 1, 10),
-        groupId: brunchGroup.id,
-        senderId: users[2].id,
-        receiverId: users[4].id,
-      },
-    }),
-  ]);
-
-  await prisma.split.update({
-    where: { id: brunchTransactions[0].splits[1].id },
-    data: { isPaid: true },
-  });
-
-  await prisma.group.create({
-    data: {
-      name: "DEMO_SEED_MARKER",
-      code: DEMO_MARKER,
-      members: {
-        connect: [{ id: users[0].id }],
-      },
-    },
-  });
-
-  return await getDemoData();
 }
 
 export async function getDemoData() {
   const groups = await prisma.group.findMany({
     where: {
       code: {
-        in: ["BALI-2025", "APART-Q1", "BRUNCH-NYC"],
+        in: ["BALI-2025"],
       },
     },
     include: {
@@ -411,7 +204,7 @@ export async function getDemoData() {
 }
 
 export async function resetDemoData() {
-  const groupCodes = ["BALI-2025", "APART-Q1", "BRUNCH-NYC", DEMO_MARKER];
+  const groupCodes = ["BALI-2025"];
 
   for (const code of groupCodes) {
     const group = await prisma.group.findUnique({

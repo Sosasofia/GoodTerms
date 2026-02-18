@@ -20,6 +20,16 @@ export async function GET(request: Request) {
 
     const groups = await seedDemoData();
 
+    if (!groups) {
+      return NextResponse.json(
+        {
+          error: "Failed to seed demo data",
+          details: "seedDemoData returned undefined",
+        },
+        { status: 500 },
+      );
+    }
+
     const response = {
       status: "success",
       message: "Demo data ready for exploration",
@@ -38,21 +48,6 @@ export async function GET(request: Request) {
             description:
               "Vacation group with shared lodging, activities, and dining. Shows expenses split multiple ways with some debts settled and others pending.",
             memberCount: 4,
-          },
-          {
-            name: "Apartment Q1 Rent",
-            code: "APART-Q1",
-            description:
-              "Roommate shared expenses (rent, utilities, groceries). Protected with PIN (1234). Demonstrates ongoing recurring costs with mixed settlement states.",
-            memberCount: 3,
-            pin: "1234",
-          },
-          {
-            name: "Weekend Brunch Club",
-            code: "BRUNCH-NYC",
-            description:
-              "Regular group outings with consistent split amounts. Shows simpler expense tracking for repeating social events.",
-            memberCount: 3,
           },
         ],
         nextSteps: [

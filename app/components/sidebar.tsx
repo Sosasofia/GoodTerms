@@ -58,8 +58,8 @@ export function Sidebar({
                   key={group.id}
                   href={`/groups/${group.id}`}
                   className={`block px-3 py-2 rounded-lg text-sm font-medium transition-all ${isActive
-                      ? "bg-blue-600 text-white shadow-lg shadow-blue-900/50"
-                      : "text-slate-400 hover:text-white hover:bg-slate-800"
+                    ? "bg-blue-600 text-white shadow-lg shadow-blue-900/50"
+                    : "text-slate-400 hover:text-white hover:bg-slate-800"
                     }`}
                 >
                   # {group.name}
@@ -71,6 +71,16 @@ export function Sidebar({
               <div className="text-xs text-slate-600 px-2 italic mt-4">
                 No groups yet.
               </div>
+            )}
+
+            {!hideDemoButton && (
+              <button
+                onClick={onDemo}
+                disabled={demoLoading}
+                className="w-full my-6 bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold py-2 px-4 rounded border border-blue-500 transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
+              >
+                {demoLoading ? "Loading Demo..." : "Demo"}
+              </button>
             )}
           </>
         )}
@@ -90,16 +100,6 @@ export function Sidebar({
         >
           → Join via Code
         </button>
-
-        {!hideDemoButton && (
-          <button
-            onClick={onDemo}
-            disabled={demoLoading}
-            className="w-full mb-6 bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold py-2 px-4 rounded border border-blue-500 transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
-          >
-            {demoLoading ? "Loading Demo..." : "Demo"}
-          </button>
-        )}
 
         <div className="pt-4 border-t border-slate-800">
           <SignedOut>
