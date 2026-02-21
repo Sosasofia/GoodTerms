@@ -1,21 +1,36 @@
-import { prisma } from "./prisma";
+import { PrismaClient } from "@prisma/client";
 import { v4 as uuidv4 } from "uuid";
 
-const DEMO_MARKER = "DEMO_SEED_MARKER_2025";
+const prisma = new PrismaClient();
 
-export async function demoSeedExists() {
-  const marker = await prisma.group.findUnique({
-    where: { code: DEMO_MARKER },
-  });
-  return !!marker;
-}
+async function main() {
+  console.log("🧹 Cleaning up old demo data...");
 
-export async function seedDemoData() {
-  const exists = await demoSeedExists();
-
-  if (exists) {
-    return await getDemoData();
+  const groupCodes = ["BALI-2025", "DEMO_SEED_MARKER_2025"];
+  for (const code of groupCodes) {
+    const group = await prisma.group.findUnique({ where: { code } });
+    if (group) {
+      await prisma.group.delete({ where: { id: group.id } });
+    }
   }
+
+  const demoEmails = [
+    "alice@demo.com",
+    "bob@demo.com",
+    "carol@demo.com",
+    "david@demo.com",
+    "emma@demo.com",
+    "frank@demo.com",
+  ];
+
+  for (const email of demoEmails) {
+    const user = await prisma.user.findFirst({ where: { email } });
+    if (user) {
+      await prisma.user.delete({ where: { id: user.id } });
+    }
+  }
+
+  console.log("🌱 Seeding demo users...");
 
   const demoUsers = [
     { name: "Alice Chen", email: "alice@demo.com", guestId: uuidv4() },
@@ -38,6 +53,8 @@ export async function seedDemoData() {
     ),
   );
 
+  console.log("🌴 Seeding BALI-2025 group...");
+
   const baliGroup = await prisma.group.create({
     data: {
       name: "Bali Trip 2025",
@@ -54,6 +71,8 @@ export async function seedDemoData() {
     },
     include: { members: true },
   });
+
+  console.log("💸 Seeding expenses & splits...");
 
   const baliExpenses = [
     {
@@ -135,6 +154,8 @@ export async function seedDemoData() {
     ),
   );
 
+  console.log("🤝 Seeding settlements...");
+
   const baliSettlements = [
     {
       amount: 200,
@@ -174,66 +195,15 @@ export async function seedDemoData() {
       }),
     ),
   );
+
+  console.log("✅ Database successfully seeded!");
 }
 
-export async function getDemoData() {
-  const groups = await prisma.group.findMany({
-    where: {
-      code: {
-        in: ["BALI-2025"],
-      },
-    },
-    include: {
-      members: true,
-      transactions: {
-        include: {
-          payer: true,
-          sender: true,
-          receiver: true,
-          splits: {
-            include: { debtor: true },
-          },
-        },
-        orderBy: { date: "desc" },
-      },
-    },
-    orderBy: { createdAt: "asc" },
+main()
+  .catch((e) => {
+    console.error(e);
+    process.exit(1);
+  })
+  .finally(async () => {
+    await prisma.$disconnect();
   });
-
-  return groups;
-}
-
-export async function resetDemoData() {
-  const groupCodes = ["BALI-2025"];
-
-  for (const code of groupCodes) {
-    const group = await prisma.group.findUnique({
-      where: { code },
-    });
-    if (group) {
-      await prisma.group.delete({
-        where: { id: group.id },
-      });
-    }
-  }
-
-  const demoEmails = [
-    "alice@demo.com",
-    "bob@demo.com",
-    "carol@demo.com",
-    "david@demo.com",
-    "emma@demo.com",
-    "frank@demo.com",
-  ];
-
-  for (const email of demoEmails) {
-    const user = await prisma.user.findFirst({
-      where: { email },
-    });
-    if (user) {
-      await prisma.user.delete({
-        where: { id: user.id },
-      });
-    }
-  }
-}
