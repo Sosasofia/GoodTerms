@@ -1,12 +1,13 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { useUser } from "@clerk/nextjs";
+import { useUser, useAuth } from "@clerk/nextjs";
 import { Group } from "../lib/types";
 import { getGroups } from "../lib/api";
 
 export function useGroups() {
-  const { isLoaded } = useUser();
+  const { isLoaded, isSignedIn } = useUser();
+  const { getToken } = useAuth();
   const [groups, setGroups] = useState<Group[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -15,7 +16,14 @@ export function useGroups() {
 
     try {
       setLoading(true);
-      const data = await getGroups();
+
+      let token = null;
+      if (isSignedIn) {
+        token = await getToken();
+      }
+
+      const data = await getGroups(token);
+
       setGroups(data || []);
     } catch (error) {
       console.error("Failed to fetch groups", error);
@@ -23,7 +31,7 @@ export function useGroups() {
     } finally {
       setLoading(false);
     }
-  }, [isLoaded]);
+  }, [isLoaded, isSignedIn, getToken]);
 
   useEffect(() => {
     refreshGroups();

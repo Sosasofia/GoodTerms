@@ -2,11 +2,11 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { useUser } from "@clerk/nextjs";
+import { useUser, useAuth } from "@clerk/nextjs";
 import { Sidebar } from "../components/sidebar";
 import { GroupModal } from "../components/group-modal";
 import { useGroups } from "../hooks/use-groups";
-import { getDemoData, joinGroup, getGroups } from "../lib/api";
+import { joinGroup, getGroups } from "../lib/api";
 import { getOrCreateGuestId } from "../lib/identity";
 
 export default function GroupsLayout({
@@ -19,6 +19,7 @@ export default function GroupsLayout({
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [demoLoading, setDemoLoading] = useState(false);
   const { user, isLoaded } = useUser();
+  const { getToken } = useAuth();
   const router = useRouter();
 
   const isDemoMember = groups.some((g) => g.code === "BALI-2025");
@@ -29,11 +30,11 @@ export default function GroupsLayout({
     setDemoLoading(true);
 
     try {
-      await getDemoData();
+      const token = await getToken();
 
       if (user) {
         try {
-          await joinGroup({ code: "BALI-2025" });
+          await joinGroup({ code: "BALI-2025" }, token);
         } catch (error: any) {
           if (error.message?.includes("Group not found")) {
             throw error;
@@ -44,46 +45,23 @@ export default function GroupsLayout({
         const guestName = localStorage.getItem("guest_name") || "Demo User";
         localStorage.setItem("guest_name", guestName);
 
-        let joined = false;
-
         try {
           await joinGroup({
             code: "BALI-2025",
             guestId,
             guestName,
-          });
-          joined = true;
+            action: "claim"
+          }, token);
         } catch (error: any) {
-          if (
-            error.requiresConfirmation ||
-            error.message?.includes("Name taken")
-          ) {
-            try {
-              await joinGroup({
-                code: "BALI-2025",
-                guestId,
-                guestName,
-                action: "claim",
-              });
-              joined = true;
-            } catch (claimError) {
-              console.log("Claim attempt completed");
-            }
-          } else if (!error.message?.includes("Group not found")) {
-            console.log("Minor conflict, continuing...");
-          } else {
-            throw error;
-          }
+
         }
       }
 
       await refreshGroups();
-
       await new Promise((resolve) => setTimeout(resolve, 300));
 
-      const freshGroups = await getGroups();
-      const demoGroup = freshGroups.find((g) => g.code === "BALI-2025");
-
+      const freshGroups = await getGroups(token);
+      const demoGroup = (freshGroups || []).find((g: any) => g.code === "BALI-2025");
       if (demoGroup) {
         router.push(`/groups/${demoGroup.id}`);
       }

@@ -73,11 +73,11 @@ export function Sidebar({
               </div>
             )}
 
-            {!hideDemoButton && (
+            {!hideDemoButton && !user && (
               <button
                 onClick={onDemo}
                 disabled={demoLoading}
-                className="w-full my-6 bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold py-2 px-4 rounded border border-blue-500 transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
+                className="w-full my-6 cursor-pointer bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold py-2 px-4 rounded border border-blue-500 transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
               >
                 {demoLoading ? "Loading Demo..." : "Demo"}
               </button>

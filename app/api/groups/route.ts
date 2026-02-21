@@ -3,39 +3,33 @@ import { auth, currentUser } from "@clerk/nextjs/server";
 import { prisma } from "../../lib/prisma";
 
 export async function GET(req: Request) {
-  const { userId } = await auth();
-
-  const guestId = req.headers.get("x-guest-id");
-
-  if (!userId && !guestId) {
-    return NextResponse.json([]);
-  }
-
   try {
+    const { userId } = await auth();
+    const guestId = req.headers.get("x-guest-id");
+
+    if (!userId && !guestId) {
+      return NextResponse.json([]);
+    }
+
+    const memberCondition = userId ? { clerkId: userId } : { guestId: guestId };
+
     const groups = await prisma.group.findMany({
       where: {
         members: {
-          some: {
-            OR: [
-              ...(userId ? [{ clerkId: userId }] : []),
-              ...(guestId ? [{ guestId: guestId }] : []),
-            ],
-          },
+          some: memberCondition,
         },
       },
       include: {
         members: true,
       },
-      orderBy: {
-        createdAt: "desc",
-      },
+      orderBy: { createdAt: "desc" },
     });
 
     return NextResponse.json(groups);
   } catch (error) {
-    console.error("GET Error:", error);
+    console.error("Error fetching groups:", error);
     return NextResponse.json(
-      { error: "Failed to fetch groups" },
+      { error: "Internal Server Error" },
       { status: 500 },
     );
   }
