@@ -46,22 +46,25 @@ export default function GroupsLayout({
         localStorage.setItem("guest_name", guestName);
 
         try {
-          await joinGroup({
-            code: "BALI-2025",
-            guestId,
-            guestName,
-            action: "claim"
-          }, token);
-        } catch (error: any) {
-
-        }
+          await joinGroup(
+            {
+              code: "BALI-2025",
+              guestId,
+              guestName,
+              action: "claim",
+            },
+            token,
+          );
+        } catch (error: any) {}
       }
 
       await refreshGroups();
       await new Promise((resolve) => setTimeout(resolve, 300));
 
       const freshGroups = await getGroups(token);
-      const demoGroup = (freshGroups || []).find((g: any) => g.code === "BALI-2025");
+      const demoGroup = (freshGroups || []).find(
+        (g: any) => g.code === "BALI-2025",
+      );
       if (demoGroup) {
         router.push(`/groups/${demoGroup.id}`);
       }

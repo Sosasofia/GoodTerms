@@ -57,10 +57,11 @@ export function Sidebar({
                 <Link
                   key={group.id}
                   href={`/groups/${group.id}`}
-                  className={`block px-3 py-2 rounded-lg text-sm font-medium transition-all ${isActive
-                    ? "bg-blue-600 text-white shadow-lg shadow-blue-900/50"
-                    : "text-slate-400 hover:text-white hover:bg-slate-800"
-                    }`}
+                  className={`block px-3 py-2 rounded-lg text-sm font-medium transition-all ${
+                    isActive
+                      ? "bg-blue-600 text-white shadow-lg shadow-blue-900/50"
+                      : "text-slate-400 hover:text-white hover:bg-slate-800"
+                  }`}
                 >
                   # {group.name}
                 </Link>

@@ -36,10 +36,11 @@ export function HistoryList({ items }: { items: Transaction[] }) {
                   .map((s: any) => (
                     <div
                       key={s.id}
-                      className={`text-xs ${s.isPaid
-                        ? "text-green-600 line-through"
-                        : "text-red-500"
-                        }`}
+                      className={`text-xs ${
+                        s.isPaid
+                          ? "text-green-600 line-through"
+                          : "text-red-500"
+                      }`}
                     >
                       {s.debtor.name} {s.isPaid ? "paid" : "owes"} $
                       {s.amount.toFixed(0)}
