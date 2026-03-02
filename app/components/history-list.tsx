@@ -1,7 +1,7 @@
 import { Transaction } from "../lib/types";
 
 export function HistoryList({ items }: { items: Transaction[] }) {
-  if (items.length === 0) {
+  if (!items || items.length === 0) {
     return (
       <div className="text-center text-slate-400 py-8">
         No activity yet. Add an expense!

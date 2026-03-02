@@ -27,7 +27,7 @@ export function SettlementForm({
   const [selectedDebt, setSelectedDebt] = useState<any | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const unpaidDebts = items
+  const unpaidDebts = (items || [])
     .filter((item) => item.type === "expense")
     .flatMap((item) => {
       return item.splits

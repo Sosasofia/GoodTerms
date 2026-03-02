@@ -6,40 +6,37 @@ type RouteContext = {
   params: Promise<{ groupId: string }>;
 };
 
-export async function GET(req: NextRequest, { params }: RouteContext) {
-  const { userId } = await auth();
-  const guestId = req.headers.get("x-guest-id");
-
-  if (!userId && !guestId) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
-
-  const { groupId } = await params;
-
+export async function GET(
+  req: NextRequest,
+  { params }: { params: Promise<{ groupId: string }> },
+) {
   try {
-    const membership = await prisma.group.findFirst({
+    const { userId } = await auth();
+    const guestId = req.headers.get("x-guest-id");
+    const { groupId } = await params;
+
+    if (!userId && !guestId) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const group = await prisma.group.findFirst({
       where: {
         id: groupId,
         members: {
-          some: {
-            OR: [
-              ...(userId ? [{ clerkId: userId }] : []),
-              ...(guestId ? [{ guestId: guestId }] : []),
-            ],
-          },
+          some: userId ? { clerkId: userId } : { guestId: guestId },
         },
       },
     });
 
-    if (!membership) {
+    if (!group) {
       return NextResponse.json(
-        { error: "Group not found or access denied" },
-        { status: 404 },
+        { error: "Forbidden: Not a member of this group" },
+        { status: 403 },
       );
     }
 
     const transactions = await prisma.transaction.findMany({
-      where: { groupId },
+      where: { groupId: groupId },
       include: {
         payer: true,
         sender: true,
@@ -53,9 +50,9 @@ export async function GET(req: NextRequest, { params }: RouteContext) {
 
     return NextResponse.json(transactions);
   } catch (error) {
-    console.error("GET Transactions Error:", error);
+    console.error("Error fetching transactions:", error);
     return NextResponse.json(
-      { error: "Failed to fetch transactions" },
+      { error: "Internal Server Error" },
       { status: 500 },
     );
   }

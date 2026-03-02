@@ -1,5 +1,4 @@
 import { getOrCreateGuestId } from "./identity";
-import { Group } from "./types";
 
 class ApiError extends Error {
   requiresConfirmation?: boolean;
@@ -9,8 +8,24 @@ class ApiError extends Error {
   }
 }
 
-const fetcher = async (url: string, options?: RequestInit) => {
-  const res = await fetch(url, options);
+const fetcher = async (
+  url: string,
+  options?: RequestInit & { token?: string | null },
+) => {
+  const headers = new Headers(options?.headers);
+
+  if (!headers.has("Content-Type") && options?.body) {
+    headers.set("Content-Type", "application/json");
+  }
+
+  if (options?.token) {
+    headers.set("Authorization", `Bearer ${options?.token}`);
+  }
+
+  const res = await fetch(url, {
+    ...options,
+    headers,
+  });
 
   if (!res.ok) {
     let errorMessage = `Error ${res.status}: ${res.statusText}`;
@@ -34,65 +49,79 @@ const fetcher = async (url: string, options?: RequestInit) => {
   }
 };
 
-export const getGroups = async (): Promise<Group[]> => {
+export const getGroups = async (token?: string | null) => {
   const guestId = getOrCreateGuestId();
 
-  const res = await fetch("/api/groups", {
-    cache: "no-store",
+  return fetcher("/api/groups", {
+    method: "GET",
     headers: {
-      "x-guest-id": guestId || "",
+      ...(guestId ? { "x-guest-id": guestId } : {}),
     },
+    token,
   });
-
-  if (!res.ok) return [];
-  return res.json();
 };
 
-export const getGroupTransactions = async (groupId: string) => {
+export const getGroupTransactions = async (
+  groupId: string,
+  token?: string | null,
+) => {
   const guestId = getOrCreateGuestId();
 
   return fetcher(`/api/groups/${groupId}/transactions`, {
     headers: {
       "x-guest-id": guestId,
     },
+    token,
   });
 };
 
-export const createGroup = (name: string, pin?: string) =>
+export const createGroup = (
+  name: string,
+  pin?: string,
+  token?: string | null,
+) =>
   fetcher("/api/groups", {
     method: "POST",
     body: JSON.stringify({ name, pin }),
+    token,
   });
 
-export const joinGroup = (data: {
-  code: string;
-  pin?: string;
-  guestName?: string;
-  guestId?: string;
-  action?: "join" | "claim";
-}) =>
+export const joinGroup = (
+  data: {
+    code: string;
+    pin?: string;
+    guestName?: string;
+    guestId?: string;
+    action?: "join" | "claim";
+  },
+  token?: string | null,
+) =>
   fetcher("/api/groups/join", {
     method: "POST",
     body: JSON.stringify(data),
+    token,
   });
 
-export const createExpense = async (groupId: string, data: any) => {
+export const createExpense = async (
+  groupId: string,
+  data: any,
+  token?: string | null,
+) => {
   const guestId = getOrCreateGuestId();
 
   return fetcher(`/api/groups/${groupId}/transactions`, {
     method: "POST",
     headers: {
       "x-guest-id": guestId || "",
-      "Content-Type": "application/json",
     },
-    body: JSON.stringify({
-      ...data,
-    }),
+    body: JSON.stringify({ ...data }),
+    token,
   });
 };
 
-export const createSettlement = (data: any) =>
+export const createSettlement = (data: any, token?: string | null) =>
   fetcher("/api/settlements", {
     method: "POST",
     body: JSON.stringify(data),
+    token,
   });

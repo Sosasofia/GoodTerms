@@ -13,9 +13,19 @@ interface SidebarProps {
   groups: Group[];
   loading?: boolean;
   onOpenModal: (mode: "create" | "join") => void;
+  onDemo: () => void;
+  demoLoading?: boolean;
+  hideDemoButton?: boolean;
 }
 
-export function Sidebar({ groups, loading, onOpenModal }: SidebarProps) {
+export function Sidebar({
+  groups,
+  loading,
+  onOpenModal,
+  onDemo,
+  demoLoading,
+  hideDemoButton,
+}: SidebarProps) {
   const pathname = usePathname();
   const { user } = useUser();
 
@@ -62,6 +72,16 @@ export function Sidebar({ groups, loading, onOpenModal }: SidebarProps) {
               <div className="text-xs text-slate-600 px-2 italic mt-4">
                 No groups yet.
               </div>
+            )}
+
+            {!hideDemoButton && !user && (
+              <button
+                onClick={onDemo}
+                disabled={demoLoading}
+                className="w-full my-6 cursor-pointer bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold py-2 px-4 rounded border border-blue-500 transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
+              >
+                {demoLoading ? "Loading Demo..." : "Demo"}
+              </button>
             )}
           </>
         )}
