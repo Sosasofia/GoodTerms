@@ -8,12 +8,12 @@ type RouteContext = {
 
 export async function GET(
   req: NextRequest,
-  { params }: { params: { groupId: string } },
+  { params }: { params: Promise<{ groupId: string }> },
 ) {
   try {
     const { userId } = await auth();
     const guestId = req.headers.get("x-guest-id");
-    const { groupId } = params;
+    const { groupId } = await params;
 
     if (!userId && !guestId) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
