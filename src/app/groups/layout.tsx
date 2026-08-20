@@ -3,11 +3,11 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useUser, useAuth } from "@clerk/nextjs";
-import { Sidebar } from "../components/sidebar";
-import { GroupModal } from "../components/group-modal";
-import { useGroups } from "../hooks/use-groups";
-import { joinGroup, getGroups } from "../lib/api";
-import { getOrCreateGuestId } from "../lib/identity";
+import { Sidebar } from "@/components/sidebar";
+import { GroupModal } from "@/components/group-modal";
+import { useGroups } from "@/hooks/use-groups";
+import { joinGroup, getGroups } from "@/lib/api";
+import { getOrCreateGuestId } from "@/lib/identity";
 
 export default function GroupsLayout({
   children,

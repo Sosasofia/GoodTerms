@@ -2,11 +2,10 @@
 
 import { useEffect, useState, use } from "react";
 import { useUser } from "@clerk/nextjs";
-import { getGroupTransactions } from "../../lib/api";
-import { Dashboard, DashboardSkeleton } from "../../components/dashboard";
-import { useGroups } from "../../hooks/use-groups";
-import { useRouter } from "next/navigation";
-import { getOrCreateGuestId } from "../../lib/identity";
+import { getGroupTransactions } from "@/lib/api";
+import { Dashboard, DashboardSkeleton } from "@/components/dashboard";
+import { useGroups } from "@/hooks/use-groups";
+import { getOrCreateGuestId } from "@/lib/identity";
 
 export default function GroupPage({
   params,

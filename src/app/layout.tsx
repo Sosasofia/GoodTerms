@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { ClerkProvider } from "@clerk/nextjs";
+// @ts-ignore -- Next.js global stylesheet side-effect import
 import "./globals.css";
 
 const geistSans = Geist({
@@ -15,7 +16,7 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: "GoodTerms",
-  description: "Split expenses easil",
+  description: "Split expenses easily with GoodTerms",
 };
 
 export default function RootLayout({
