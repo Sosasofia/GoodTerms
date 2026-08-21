@@ -29,6 +29,7 @@ export function ExpenseForm({ group, onSuccess }: ExpenseFormProps) {
       await createExpense(group.id, {
         description: desc,
         amount: parseFloat(amount),
+        note,
         payerId,
         splits: involved.map((memberId) => ({
           debtorId: memberId,
@@ -42,6 +43,7 @@ export function ExpenseForm({ group, onSuccess }: ExpenseFormProps) {
     } catch (error) {
       console.error("Failed to add expense", error);
       alert("Failed to add expense");
+      setIsLoading(false);
     }
   };
 
