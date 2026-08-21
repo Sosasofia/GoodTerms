@@ -62,7 +62,7 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
   try {
     const { groupId } = await params;
     const body = await request.json();
-    const { description, amount, payerId, splits } = body;
+    const { description, amount, payerId, splits, note } = body;
 
     const parsedAmount = parseFloat(amount);
     if (isNaN(parsedAmount) || parsedAmount <= 0) {
@@ -100,6 +100,7 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
       data: {
         description,
         amount: parsedAmount,
+        note,
         type: "expense",
         date: new Date(),
         group: { connect: { id: groupId } },

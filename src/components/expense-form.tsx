@@ -1,9 +1,6 @@
-"use client";
-
-import { useState } from "react";
 import { Group } from "../lib/types";
-import { createExpense } from "../lib/api";
 import { LoadingSpinner } from "./loading-spinner";
+import { useExpenseForm } from "@/hooks/use-expense-form";
 
 interface ExpenseFormProps {
   group: Group;
@@ -11,51 +8,27 @@ interface ExpenseFormProps {
 }
 
 export function ExpenseForm({ group, onSuccess }: ExpenseFormProps) {
-  const [desc, setDesc] = useState("");
-  const [amount, setAmount] = useState("");
-  const [note, setNote] = useState("");
-  const [payerId, setPayerId] = useState(group.members[0]?.id || "");
-  const [involved, setInvolved] = useState<string[]>(
-    group.members.map((m) => m.id),
-  );
-  const [isLoading, setIsLoading] = useState(false);
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (involved.length === 0) return;
-    setIsLoading(true);
-
-    try {
-      await createExpense(group.id, {
-        description: desc,
-        amount: parseFloat(amount),
-        note,
-        payerId,
-        splits: involved.map((memberId) => ({
-          debtorId: memberId,
-          amount: parseFloat(amount) / involved.length,
-        })),
-      });
-
-      setAmount("");
-      setIsLoading(false);
-      onSuccess();
-    } catch (error) {
-      console.error("Failed to add expense", error);
-      alert("Failed to add expense");
-      setIsLoading(false);
-    }
-  };
-
-  function toggleUser(userId: string) {
-    if (involved.includes(userId))
-      setInvolved(involved.filter((id) => id !== userId));
-    else setInvolved([...involved, userId]);
-  }
+  const {
+    desc, setDesc,
+    amount, setAmount,
+    note, setNote,
+    payerId, setPayerId,
+    involved, toggleUser,
+    isLoading,
+    errorMessage,
+    handleSubmit
+  } = useExpenseForm(group, onSuccess);
 
   return (
     <div className="bg-white p-6 rounded-xl shadow-lg border-t-4 border-blue-500">
       <form onSubmit={handleSubmit} className="space-y-4">
+
+        {errorMessage && (
+          <div className="p-3 text-sm font-medium text-red-800 bg-red-100 rounded-lg border border-red-200">
+            {errorMessage}
+          </div>
+        )}
+
         <input
           className="w-full border p-3 rounded-lg"
           placeholder="Description"
@@ -111,7 +84,7 @@ export function ExpenseForm({ group, onSuccess }: ExpenseFormProps) {
             ))}
           </div>
         </div>
-        <button className="w-full bg-blue-600 text-white font-bold py-3 rounded-lg cursor-pointer">
+        <button disabled={isLoading} className="w-full bg-blue-600 text-white font-bold py-3 rounded-lg cursor-pointer">
           {isLoading ? <LoadingSpinner className="mx-auto" /> : "Save Expense"}
         </button>
       </form>

@@ -40,6 +40,7 @@ model Group {
 model Transaction {
   id          String   @id @default(uuid())
   description String
+  note        String?
   amount      Float
   date        DateTime @default(now())
   type        String   @default("expense")
