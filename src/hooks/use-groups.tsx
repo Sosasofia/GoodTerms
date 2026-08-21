@@ -10,12 +10,14 @@ export function useGroups() {
   const { getToken } = useAuth();
   const [groups, setGroups] = useState<Group[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   const refreshGroups = useCallback(async () => {
     if (!isLoaded) return;
 
     try {
       setLoading(true);
+      setError(null);
 
       let token = null;
       if (isSignedIn) {
@@ -26,6 +28,7 @@ export function useGroups() {
 
       setGroups(data || []);
     } catch (error) {
+      setError("Failed to load groups. Please try again.");
       console.error("Failed to fetch groups", error);
       setGroups([]);
     } finally {
@@ -37,5 +40,5 @@ export function useGroups() {
     refreshGroups();
   }, [refreshGroups]);
 
-  return { groups, loading, refreshGroups };
+  return { groups, loading, refreshGroups, error };
 }
