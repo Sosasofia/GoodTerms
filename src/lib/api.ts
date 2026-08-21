@@ -15,6 +15,14 @@ export interface SettlementPayload {
   amount: number;
 }
 
+export interface JoinGroupPayload {
+  code: string;
+  pin?: string;
+  guestName?: string;
+  guestId?: string;
+  action?: "join" | "claim";
+}
+
 class ApiError extends Error {
   requiresConfirmation?: boolean;
   constructor(message: string, requiresConfirmation?: boolean) {
@@ -97,13 +105,7 @@ export const createGroup = (
   });
 
 export const joinGroup = (
-  data: {
-    code: string;
-    pin?: string;
-    guestName?: string;
-    guestId?: string;
-    action?: "join" | "claim";
-  },
+  data: JoinGroupPayload,
   token?: string | null,
 ) =>
   fetcher("/api/groups/join", {

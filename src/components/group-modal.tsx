@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { createGroup, joinGroup } from "../lib/api";
+import { createGroup, joinGroup, JoinGroupPayload } from "../lib/api";
 import { useUser } from "@clerk/nextjs";
 import { getOrCreateGuestId } from "../lib/identity";
 
@@ -13,9 +13,9 @@ interface GroupModalProps {
 
 export function GroupModal({ mode, onClose, onSuccess }: GroupModalProps) {
   const { user, isLoaded } = useUser();
+
   const [name, setName] = useState("");
   const [code, setCode] = useState("");
-
   const [pin, setPin] = useState("");
   const [guestName, setGuestName] = useState("");
   const [loading, setLoading] = useState(false);
@@ -37,39 +37,41 @@ export function GroupModal({ mode, onClose, onSuccess }: GroupModalProps) {
 
     try {
       if (mode === "create") {
-        if (!user) throw new Error("You must be logged in to create a group.");
+        if (!user) {
+          setError("You must be logged in to create a group.");
+          setLoading(false);
+          return;
+        }
         await createGroup(name, pin);
       } else {
-        let payload: any = {
-          code,
-          pin,
-          action: forceAction || "join",
-        };
-
         if (!user) {
-          if (!guestName) throw new Error("Please enter your name.");
-
-          localStorage.setItem("guest_name", guestName);
-
-          const guestId = getOrCreateGuestId();
-          payload.guestName = guestName;
-          payload.guestId = guestId;
-        }
-
-        try {
-          await joinGroup(payload);
-        } catch (err: any) {
-          if (err.requiresConfirmation) {
-            setConflictError(true);
+          if (!guestName.trim()) { 
+            setError("Please enter your name.");
             setLoading(false);
             return;
           }
-          throw err;
+          
+          localStorage.setItem("guest_name", guestName);
+
+          let payload: JoinGroupPayload = {
+            code,
+            pin,
+            action: forceAction || "join",
+            guestName,
+            guestId: getOrCreateGuestId(),
+          };
+
+          await joinGroup(payload);
         }
       }
       onSuccess();
       onClose();
     } catch (err: any) {
+      if (err.requiresConfirmation) {
+        setConflictError(true);
+        setLoading(false);
+        return; 
+      }
       console.error(err);
       setError(err.message || "Failed to submit");
     } finally {
