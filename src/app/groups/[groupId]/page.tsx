@@ -5,7 +5,8 @@ import { useUser } from "@clerk/nextjs";
 import { getGroupTransactions } from "@/lib/api";
 import { Dashboard, DashboardSkeleton } from "@/components/dashboard";
 import { useGroups } from "@/hooks/use-groups";
-import { getOrCreateGuestId } from "@/lib/identity";
+import { getGroupViewerId } from "@/lib/identity";
+import { Transaction } from "@/lib/types";
 
 export default function GroupPage({
   params,
@@ -15,21 +16,12 @@ export default function GroupPage({
   const { groupId } = use(params);
   const { user } = useUser();
   const { groups, loading: groupsLoading } = useGroups();
-
-  const [items, setItems] = useState([]);
-  const [isLoading, setIsLoading] = useState(true);
-
+  
   const activeGroup = groups.find((g) => g.id === groupId);
+  const viewerId = getGroupViewerId(activeGroup, user?.id);
 
-  const dbUser = activeGroup?.members.find((m) => {
-    if (user?.id && m.clerkId === user.id) return true;
-
-    const guestId = getOrCreateGuestId();
-
-    return guestId && m.id === guestId;
-  });
-
-  const viewerId = dbUser?.id || "";
+  const [items, setItems] = useState<Transaction[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     if (groupId) {
@@ -49,18 +41,20 @@ export default function GroupPage({
 
   if (!activeGroup) return null;
 
+  const refreshTransactions = () => {
+    setIsLoading(true);
+    getGroupTransactions(groupId)
+      .then(setItems)
+      .finally(() => setIsLoading(false));
+  }
+
   return (
     <div className="p-4 md:p-8">
       <Dashboard
         group={activeGroup}
         items={items}
         viewerId={viewerId}
-        onUpdate={() => {
-          setIsLoading(true);
-          getGroupTransactions(groupId)
-            .then(setItems)
-            .finally(() => setIsLoading(false));
-        }}
+        onUpdate={refreshTransactions}
       />
     </div>
   );

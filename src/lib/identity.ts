@@ -12,3 +12,14 @@ export function getOrCreateGuestId(): string {
 
   return id;
 }
+
+export function getGroupViewerId(activeGroup: any, clerkUserId?: string) {
+  const dbUser = activeGroup?.members.find((m: any) => {
+    if (clerkUserId && m.clerkId === clerkUserId) return true;
+
+    const guestId = getOrCreateGuestId();
+    return guestId && m.id === guestId;
+  });
+
+  return dbUser?.id || "";
+}
