@@ -5,6 +5,7 @@ import { Group, Transaction } from "../lib/types";
 import { ExpenseForm } from "./expense-form";
 import { HistoryList } from "./history-list";
 import { SettlementForm } from "./settlement-form";
+import { calculateBalances } from "@/services/balances";
 
 interface DashboardProps {
   group: Group;
@@ -25,30 +26,7 @@ export function Dashboard({
     "expense",
   );
 
-  const balances = useMemo(() => {
-    const bal: Record<string, number> = {};
-    group.members.forEach((u) => (bal[u.name] = 0));
-
-    (items || []).forEach((item) => {
-      if (item.type === "expense") {
-        const payerName = item.payer?.name || "Unknown";
-        item.splits.forEach((split) => {
-          const debtorName = split.debtor?.name || "Unknown";
-          if (payerName !== debtorName) {
-            bal[payerName] = (bal[payerName] || 0) + split.amount;
-            bal[debtorName] = (bal[debtorName] || 0) - split.amount;
-          }
-        });
-      } else {
-        const senderName = item.sender?.name || "Unknown";
-        const receiverName = item.receiver?.name || "Unknown";
-
-        bal[senderName] = (bal[senderName] || 0) + item.amount;
-        bal[receiverName] = (bal[receiverName] || 0) - item.amount;
-      }
-    });
-    return bal;
-  }, [items, group]);
+  const balances = useMemo(() => calculateBalances(group, items), [items, group]);
 
   return (
     <div className="max-w-2xl mx-auto">
