@@ -13,7 +13,7 @@ export interface Group {
 }
 
 export interface Expense {
-  id: number;
+  id: string;
   type: "expense";
   description: string;
   amount: number;
@@ -23,14 +23,14 @@ export interface Expense {
 }
 
 export interface Split {
-  id: number;
+  id: string;
   debtor: User;
   amount: number;
   isPaid: boolean;
 }
 
 export interface Settlement {
-  id: number;
+  id: string;
   type: "settlement";
   amount: number;
   senderId: string;

@@ -1,9 +1,7 @@
 "use client";
 
-import { useState } from "react";
 import { Group, Transaction } from "../lib/types";
-import { createSettlement } from "../lib/api";
-import { LoadingSpinner } from "./loading-spinner";
+import { useSettlementForm } from "@/hooks/use-settlement-form";
 
 interface SettlementFormProps {
   group: Group;
@@ -18,63 +16,26 @@ export function SettlementForm({
   viewerId,
   onSuccess,
 }: SettlementFormProps) {
-  const [senderId, setSenderId] = useState(
-    viewerId || group.members[0]?.id || "",
-  );
-
-  const [processingId, setProcessingId] = useState<string | null>(null);
-
-  const [selectedDebt, setSelectedDebt] = useState<any | null>(null);
-  const [isSubmitting, setIsSubmitting] = useState(false);
-
-  const unpaidDebts = (items || [])
-    .filter((item) => item.type === "expense")
-    .flatMap((item) => {
-      return item.splits
-        .filter((s) => s.debtor.id === senderId)
-        .filter((s) => item.payer.id !== senderId)
-        .filter((s) => !s.isPaid)
-        .map((s) => ({
-          ...s,
-          expenseDescription: item.description,
-          receiverName: item.payer?.name,
-          receiverId: item.payer?.id,
-        }));
-    });
-
-  function handleInitiatePayment(debt: any) {
-    if (!debt.receiverId) {
-      alert("Error: Cannot identify who to pay.");
-      return;
-    }
-    setSelectedDebt(debt);
-  }
-
-  async function handleConfirmPayment() {
-    if (!selectedDebt) return;
-
-    try {
-      setIsSubmitting(true);
-      await createSettlement({
-        amount: selectedDebt.amount,
-        senderId,
-        receiverId: selectedDebt.receiverId,
-        splitId: selectedDebt.id,
-        groupId: group.id,
-      });
-
-      onSuccess();
-      setSelectedDebt(null);
-    } catch (err: any) {
-      alert("Failed to pay: " + err.message);
-    } finally {
-      setIsSubmitting(false);
-    }
-  }
+  const {
+    senderId, setSenderId,
+    unpaidDebts,
+    selectedDebt, setSelectedDebt,
+    isSubmitting,
+    errorMessage,
+    handleInitiatePayment,
+    handleConfirmPayment
+  } = useSettlementForm(group, items, viewerId, onSuccess);
 
   return (
     <>
       <div className="bg-white p-6 rounded-xl shadow-lg border-t-4 border-green-500">
+
+        {errorMessage && (
+          <div className="mb-4 p-3 text-sm font-medium text-red-800 bg-red-100 rounded-lg border border-red-200">
+            {errorMessage}
+          </div>
+        )}
+
         <div className="mb-4">
           <label className="text-xs font-bold text-slate-500 block mb-1">
             WHO IS PAYING?
@@ -100,35 +61,26 @@ export function SettlementForm({
           </p>
         ) : (
           <div className="space-y-3">
-            {unpaidDebts.map((debt: any) => {
-              const isItemLoading = processingId === debt.id;
-              const isLoading = processingId !== null;
-
-              return (
-                <div
-                  key={debt.id}
-                  className="flex justify-between items-center border p-3 rounded-lg hover:bg-slate-50"
-                >
-                  <div>
-                    <div className="font-bold">{debt.expenseDescription}</div>
-                    <div className="text-xs text-slate-500">
-                      Owed to {debt.receiverName}
-                    </div>
+            {unpaidDebts.map((debt) => (
+              <div
+                key={debt.id}
+                className="flex justify-between items-center border p-3 rounded-lg hover:bg-slate-50"
+              >
+                <div>
+                  <div className="font-bold">{debt.expenseDescription}</div>
+                  <div className="text-xs text-slate-500">
+                    Owed to {debt.receiverName}
                   </div>
-                  <button
-                    disabled={isLoading}
-                    onClick={() => handleInitiatePayment(debt)}
-                    className="bg-green-600 hover:bg-green-700 disabled:bg-slate-300 text-white px-3 py-1 rounded-lg text-sm font-bold cursor-pointer transition-colors min-w-25 flex justify-center"
-                  >
-                    {isItemLoading ? (
-                      <LoadingSpinner className="h-4 w-4" />
-                    ) : (
-                      `Pay $${debt.amount.toFixed(2)}`
-                    )}
-                  </button>
                 </div>
-              );
-            })}
+                <button
+                  disabled={isSubmitting}
+                  onClick={() => handleInitiatePayment(debt)}
+                  className="bg-green-600 hover:bg-green-700 disabled:bg-slate-300 text-white px-3 py-1 rounded-lg text-sm font-bold cursor-pointer transition-colors min-w-25 flex justify-center"
+                >
+                  Pay ${debt.amount.toFixed(2)}
+                </button>
+              </div>
+            ))}
           </div>
         )}
       </div>

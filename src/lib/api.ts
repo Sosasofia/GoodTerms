@@ -12,6 +12,7 @@ export interface SettlementPayload {
   groupId: string;
   senderId: string;
   receiverId: string;
+  splitId?: string;
   amount: number;
 }
 
