@@ -1,5 +1,20 @@
 import { getOrCreateGuestId } from "./identity";
 
+export interface ExpensePayload {
+  description: string;
+  amount: number;
+  note?: string;
+  payerId: string;
+  splits: { debtorId: string; amount: number }[];
+}
+
+export interface SettlementPayload {
+  groupId: string;
+  senderId: string;
+  receiverId: string;
+  amount: number;
+}
+
 class ApiError extends Error {
   requiresConfirmation?: boolean;
   constructor(message: string, requiresConfirmation?: boolean) {
@@ -20,6 +35,11 @@ const fetcher = async (
 
   if (options?.token) {
     headers.set("Authorization", `Bearer ${options?.token}`);
+  }
+
+  const guestId = getOrCreateGuestId();
+  if (guestId) {
+    headers.set("x-guest-id", guestId);
   }
 
   const res = await fetch(url, {
@@ -50,13 +70,8 @@ const fetcher = async (
 };
 
 export const getGroups = async (token?: string | null) => {
-  const guestId = getOrCreateGuestId();
-
   return fetcher("/api/groups", {
     method: "GET",
-    headers: {
-      ...(guestId ? { "x-guest-id": guestId } : {}),
-    },
     token,
   });
 };
@@ -65,12 +80,7 @@ export const getGroupTransactions = async (
   groupId: string,
   token?: string | null,
 ) => {
-  const guestId = getOrCreateGuestId();
-
   return fetcher(`/api/groups/${groupId}/transactions`, {
-    headers: {
-      "x-guest-id": guestId,
-    },
     token,
   });
 };
@@ -104,22 +114,20 @@ export const joinGroup = (
 
 export const createExpense = async (
   groupId: string,
-  data: any,
+  data: ExpensePayload,
   token?: string | null,
 ) => {
-  const guestId = getOrCreateGuestId();
-
   return fetcher(`/api/groups/${groupId}/transactions`, {
     method: "POST",
-    headers: {
-      "x-guest-id": guestId || "",
-    },
     body: JSON.stringify({ ...data }),
     token,
   });
 };
 
-export const createSettlement = (data: any, token?: string | null) =>
+export const createSettlement = (
+  data: SettlementPayload, 
+  token?: string | null
+) =>
   fetcher("/api/settlements", {
     method: "POST",
     body: JSON.stringify(data),
