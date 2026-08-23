@@ -1,4 +1,5 @@
 import { getOrCreateGuestId } from "./identity";
+import type { Group, Transaction } from "./types";
 
 export interface ExpensePayload {
   description: string;
@@ -24,26 +25,25 @@ export interface JoinGroupPayload {
   action?: "join" | "claim";
 }
 
-class ApiError extends Error {
+export class ApiError extends Error {
   requiresConfirmation?: boolean;
+
   constructor(message: string, requiresConfirmation?: boolean) {
     super(message);
+    this.name = "ApiError";
     this.requiresConfirmation = requiresConfirmation;
   }
 }
 
-const fetcher = async (
+const fetcher = async <T>(
   url: string,
-  options?: RequestInit & { token?: string | null },
-) => {
+  options?: RequestInit,
+): Promise<T | null> => {
   const headers = new Headers(options?.headers);
+  const body = options?.body;
 
-  if (!headers.has("Content-Type") && options?.body) {
+  if (!headers.has("Content-Type") && body && !(body instanceof FormData)) {
     headers.set("Content-Type", "application/json");
-  }
-
-  if (options?.token) {
-    headers.set("Authorization", `Bearer ${options?.token}`);
   }
 
   const guestId = getOrCreateGuestId();
@@ -62,77 +62,69 @@ const fetcher = async (
 
     try {
       const errorData = await res.json();
-      errorMessage = errorData.error || errorMessage;
-      requiresConfirmation = errorData.requiresConfirmation;
-    } catch (e) {
-      console.error("Non-JSON error response:", e);
+
+      if (typeof errorData?.error === "string") {
+        errorMessage = errorData.error;
+      }
+
+      requiresConfirmation = Boolean(errorData?.requiresConfirmation);
+    } catch {
+      try {
+        const errorText = await res.text();
+
+        if (errorText) {
+          errorMessage = errorText;
+        }
+      } catch {
+        // Keep the default status-derived message.
+      }
     }
 
     throw new ApiError(errorMessage, requiresConfirmation);
   }
 
+  if (res.status === 204) {
+    return null;
+  }
+
   try {
-    return await res.json();
-  } catch (e) {
+    return (await res.json()) as T;
+  } catch {
     return null;
   }
 };
 
-export const getGroups = async (token?: string | null) => {
-  return fetcher("/api/groups", {
+export const getGroups = () => {
+  return fetcher<Group[]>("/api/groups", {
     method: "GET",
-    token,
   });
 };
 
-export const getGroupTransactions = async (
-  groupId: string,
-  token?: string | null,
-) => {
-  return fetcher(`/api/groups/${groupId}/transactions`, {
-    token,
-  });
+export const getGroupTransactions = (groupId: string) => {
+  return fetcher<Transaction[]>(`/api/groups/${groupId}/transactions`);
 };
 
-export const createGroup = (
-  name: string,
-  pin?: string,
-  token?: string | null,
-) =>
-  fetcher("/api/groups", {
+export const createGroup = (name: string, pin?: string) =>
+  fetcher<Group>("/api/groups", {
     method: "POST",
     body: JSON.stringify({ name, pin }),
-    token,
   });
 
-export const joinGroup = (
-  data: JoinGroupPayload,
-  token?: string | null,
-) =>
-  fetcher("/api/groups/join", {
+export const joinGroup = (data: JoinGroupPayload) =>
+  fetcher<Group>("/api/groups/join", {
     method: "POST",
     body: JSON.stringify(data),
-    token,
   });
 
-export const createExpense = async (
-  groupId: string,
-  data: ExpensePayload,
-  token?: string | null,
-) => {
-  return fetcher(`/api/groups/${groupId}/transactions`, {
+export const createExpense = (groupId: string, data: ExpensePayload) => {
+  return fetcher<Transaction>(`/api/groups/${groupId}/transactions`, {
     method: "POST",
-    body: JSON.stringify({ ...data }),
-    token,
+    body: JSON.stringify(data),
   });
 };
 
-export const createSettlement = (
-  data: SettlementPayload, 
-  token?: string | null
-) =>
-  fetcher("/api/settlements", {
+export const createSettlement = (data: SettlementPayload) =>
+  fetcher<Transaction>("/api/settlements", {
     method: "POST",
     body: JSON.stringify(data),
-    token,
   });
