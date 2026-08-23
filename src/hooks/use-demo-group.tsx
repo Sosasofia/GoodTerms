@@ -1,13 +1,12 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { useUser, useAuth } from "@clerk/nextjs";
+import { useUser } from "@clerk/nextjs";
 import { joinGroup, getGroups } from "@/lib/api";
 import { getOrCreateGuestId } from "@/lib/identity";
 
 export function useDemoGroup(groups: any[], refreshGroups: () => Promise<void>) {
   const [demoLoading, setDemoLoading] = useState(false);
   const { user, isLoaded } = useUser();
-  const { getToken } = useAuth();
   const router = useRouter();
 
   const isDemoMember = groups.some((g) => g.code === "BALI-2025");
@@ -18,11 +17,9 @@ export function useDemoGroup(groups: any[], refreshGroups: () => Promise<void>) 
     setDemoLoading(true);
 
     try {
-      const token = await getToken();
-
       if (user) {
         try {
-          await joinGroup({ code: "BALI-2025" }, token);
+          await joinGroup({ code: "BALI-2025" });
         } catch (error: any) {
           if (error.message?.includes("Group not found")) {
             throw error;
@@ -41,7 +38,6 @@ export function useDemoGroup(groups: any[], refreshGroups: () => Promise<void>) 
               guestName,
               action: "claim",
             },
-            token,
           );
         } catch (error: any) {}
       }
@@ -49,7 +45,7 @@ export function useDemoGroup(groups: any[], refreshGroups: () => Promise<void>) 
       await refreshGroups();
       await new Promise((resolve) => setTimeout(resolve, 300));
 
-      const freshGroups = await getGroups(token);
+      const freshGroups = await getGroups();
       const demoGroup = (freshGroups || []).find(
         (g: any) => g.code === "BALI-2025",
       );

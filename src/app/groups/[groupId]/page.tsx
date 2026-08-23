@@ -26,7 +26,7 @@ export default function GroupPage({
   useEffect(() => {
     if (groupId) {
       getGroupTransactions(groupId)
-        .then(setItems)
+        .then((data) => setItems(data || []))
         .finally(() => setIsLoading(false));
     }
   }, [groupId]);
@@ -44,9 +44,9 @@ export default function GroupPage({
   const refreshTransactions = () => {
     setIsLoading(true);
     getGroupTransactions(groupId)
-      .then(setItems)
+      .then((data) => setItems(data || []))
       .finally(() => setIsLoading(false));
-  }
+  };
 
   return (
     <div className="p-4 md:p-8">

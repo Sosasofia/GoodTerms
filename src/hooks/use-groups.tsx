@@ -1,13 +1,12 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { useUser, useAuth } from "@clerk/nextjs";
+import { useUser } from "@clerk/nextjs";
 import { Group } from "../lib/types";
 import { getGroups } from "../lib/api";
 
 export function useGroups() {
-  const { isLoaded, isSignedIn } = useUser();
-  const { getToken } = useAuth();
+  const { isLoaded } = useUser();
   const [groups, setGroups] = useState<Group[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -19,12 +18,7 @@ export function useGroups() {
       setLoading(true);
       setError(null);
 
-      let token = null;
-      if (isSignedIn) {
-        token = await getToken();
-      }
-
-      const data = await getGroups(token);
+      const data = await getGroups();
 
       setGroups(data || []);
     } catch (error) {
@@ -34,7 +28,7 @@ export function useGroups() {
     } finally {
       setLoading(false);
     }
-  }, [isLoaded, isSignedIn, getToken]);
+  }, [isLoaded]);
 
   useEffect(() => {
     refreshGroups();
