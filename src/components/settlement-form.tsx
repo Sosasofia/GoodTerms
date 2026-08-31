@@ -1,13 +1,19 @@
 "use client";
 
+import { useMemo } from "react";
 import { Group, Transaction } from "../lib/types";
 import { useSettlementForm } from "@/hooks/use-settlement-form";
+import {
+  SettlementSuggestion,
+  getUserSettlementSuggestions,
+} from "@/services/balances";
 
 interface SettlementFormProps {
   group: Group;
   items: Transaction[];
   viewerId: string;
   onSuccess: () => void;
+  settlementSuggestions?: SettlementSuggestion[];
 }
 
 export function SettlementForm({
@@ -15,16 +21,29 @@ export function SettlementForm({
   items,
   viewerId,
   onSuccess,
+  settlementSuggestions = [],
 }: SettlementFormProps) {
   const {
-    senderId, setSenderId,
+    senderId,
+    setSenderId,
     unpaidDebts,
-    selectedDebt, setSelectedDebt,
+    selectedDebt,
+    setSelectedDebt,
     isSubmitting,
     errorMessage,
     handleInitiatePayment,
-    handleConfirmPayment
+    handleConfirmPayment,
   } = useSettlementForm(group, items, viewerId, onSuccess);
+
+  const memberMap = new Map(group.members.map((member) => [member.id, member]));
+
+  const actualDebtsByReceiver: SettlementSuggestion[] = useMemo(
+    () => getUserSettlementSuggestions(group, items, senderId),
+    [group, items, senderId],
+  );
+
+  const visibleSuggestions = actualDebtsByReceiver;
+  const currentPayer = memberMap.get(senderId);
 
   return (
     <>
@@ -52,6 +71,65 @@ export function SettlementForm({
             ))}
           </select>
         </div>
+
+        {visibleSuggestions.length > 0 && (
+          <div className="mb-6">
+            <h3 className="font-bold text-slate-700 mb-2">Suggested Settlements</h3>
+            <div className="space-y-3">
+              {visibleSuggestions.map((suggestion) => {
+                const fromMember = memberMap.get(suggestion.fromUserId);
+                const toMember = memberMap.get(suggestion.toUserId);
+
+                if (!fromMember || !toMember) return null;
+
+                return (
+                  <div
+                    key={`${suggestion.fromUserId}-${suggestion.toUserId}-${suggestion.amount}`}
+                    className="flex justify-between items-center border border-green-200 bg-green-50 p-3 rounded-lg"
+                  >
+                    <div>
+                      <div className="font-bold text-slate-700">
+                        {fromMember.name} → {toMember.name}
+                      </div>
+                      <div className="text-xs text-slate-500">
+                        You owe {toMember.name} ${suggestion.amount.toFixed(2)}
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="font-bold text-green-700">
+                        ${suggestion.amount.toFixed(2)}
+                      </span>
+                      <button
+                        disabled={isSubmitting}
+                        onClick={() =>
+                          handleInitiatePayment({
+                            id: `${suggestion.fromUserId}-${suggestion.toUserId}`,
+                            amount: suggestion.amount,
+                            expenseDescription: `Suggested settlement: ${fromMember.name} → ${toMember.name}`,
+                            receiverName: toMember.name,
+                            receiverId: suggestion.toUserId,
+                          })
+                        }
+                        className="bg-green-600 hover:bg-green-700 disabled:bg-slate-300 text-white px-3 py-1 rounded-lg text-sm font-bold cursor-pointer transition-colors min-w-25 flex justify-center"
+                      >
+                        Pay
+                      </button>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
+        {visibleSuggestions.length === 0 && currentPayer && (
+          <div className="mb-6">
+            <h3 className="font-bold text-slate-700 mb-2">Suggested Settlements</h3>
+            <p className="text-sm text-slate-500">
+              No outgoing payment suggestions for {currentPayer.name} right now.
+            </p>
+          </div>
+        )}
 
         <h3 className="font-bold text-slate-700 mb-2">Unpaid Debts</h3>
 

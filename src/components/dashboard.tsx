@@ -5,7 +5,7 @@ import { Group, Transaction } from "../lib/types";
 import { ExpenseForm } from "./expense-form";
 import { HistoryList } from "./history-list";
 import { SettlementForm } from "./settlement-form";
-import { calculateBalances } from "@/services/balances";
+import { calculateBalances, getOptimizedSettlements } from "@/services/balances";
 
 interface DashboardProps {
   group: Group;
@@ -41,6 +41,10 @@ export function Dashboard({
   }, [editingExpense]);
 
   const balances = useMemo(() => calculateBalances(group, items), [items, group]);
+  const settlementSuggestions = useMemo(
+    () => getOptimizedSettlements(group, items),
+    [group, items],
+  );
 
   return (
     <div className="max-w-2xl mx-auto">
@@ -70,7 +74,7 @@ export function Dashboard({
 
       <div className="grid grid-cols-3 gap-2 mb-8">
         {group.members.map((u) => {
-          const bal = balances[u.name] || 0;
+          const bal = balances[u.id] || 0;
           const isPositive = bal >= 0;
           return (
             <div
@@ -132,6 +136,7 @@ export function Dashboard({
             items={items}
             viewerId={viewerId}
             onSuccess={onUpdate}
+            settlementSuggestions={settlementSuggestions}
           />
         )}
       </div>
