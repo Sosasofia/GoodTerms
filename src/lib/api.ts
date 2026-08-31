@@ -123,6 +123,24 @@ export const createExpense = (groupId: string, data: ExpensePayload) => {
   });
 };
 
+export const updateExpense = (
+  groupId: string,
+  transactionId: string,
+  data: ExpensePayload,
+) => {
+  return fetcher<Transaction>(`/api/groups/${groupId}/transactions`, {
+    method: "PUT",
+    body: JSON.stringify({ transactionId, ...data }),
+  });
+};
+
+export const deleteExpense = (groupId: string, transactionId: string) => {
+  return fetcher<{ success: true }>(`/api/groups/${groupId}/transactions`, {
+    method: "DELETE",
+    body: JSON.stringify({ transactionId }),
+  });
+};
+
 export const createSettlement = (data: SettlementPayload) =>
   fetcher<Transaction>("/api/settlements", {
     method: "POST",

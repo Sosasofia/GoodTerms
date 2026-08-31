@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { Group, Transaction } from "../lib/types";
 import { ExpenseForm } from "./expense-form";
 import { HistoryList } from "./history-list";
@@ -13,6 +13,10 @@ interface DashboardProps {
   viewerId: string;
   onUpdate: () => void;
   loading?: boolean;
+  editingExpense?: Transaction | null;
+  onEditExpense?: (item: Transaction) => void;
+  onDeleteExpense?: (transactionId: string) => void;
+  onCancelEdit?: () => void;
 }
 
 export function Dashboard({
@@ -21,10 +25,20 @@ export function Dashboard({
   viewerId,
   onUpdate,
   loading,
+  editingExpense,
+  onEditExpense,
+  onDeleteExpense,
+  onCancelEdit,
 }: DashboardProps) {
   const [activeTab, setActiveTab] = useState<"expense" | "settlement">(
     "expense",
   );
+
+  useEffect(() => {
+    if (editingExpense) {
+      setActiveTab("expense");
+    }
+  }, [editingExpense]);
 
   const balances = useMemo(() => calculateBalances(group, items), [items, group]);
 
@@ -106,7 +120,12 @@ export function Dashboard({
 
       <div className="mb-8">
         {activeTab === "expense" ? (
-          <ExpenseForm group={group} onSuccess={onUpdate} />
+          <ExpenseForm
+            group={group}
+            onSuccess={onUpdate}
+            initialExpense={editingExpense}
+            onCancel={onCancelEdit}
+          />
         ) : (
           <SettlementForm
             group={group}
@@ -117,7 +136,14 @@ export function Dashboard({
         )}
       </div>
 
-      <HistoryList items={items} />
+      <HistoryList
+        items={items}
+        onEditExpense={(item) => {
+          setActiveTab("expense");
+          onEditExpense?.(item);
+        }}
+        onDeleteExpense={onDeleteExpense}
+      />
     </div>
   );
 }

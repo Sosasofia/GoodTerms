@@ -1,33 +1,74 @@
-import { Group } from "../lib/types";
+import { Group, Transaction } from "../lib/types";
 import { LoadingSpinner } from "./loading-spinner";
 import { useExpenseForm } from "@/hooks/use-expense-form";
 
 interface ExpenseFormProps {
   group: Group;
   onSuccess: () => void;
+  initialExpense?: Transaction | null;
+  onCancel?: () => void;
 }
 
-export function ExpenseForm({ group, onSuccess }: ExpenseFormProps) {
+export function ExpenseForm({
+  group,
+  onSuccess,
+  initialExpense,
+  onCancel,
+}: ExpenseFormProps) {
   const {
-    desc, setDesc,
-    amount, setAmount,
-    note, setNote,
-    payerId, setPayerId,
-    involved, toggleUser,
+    desc,
+    setDesc,
+    amount,
+    setAmount,
+    note,
+    setNote,
+    payerId,
+    setPayerId,
+    involved,
+    toggleUser,
     isLoading,
     errorMessage,
-    handleSubmit
-  } = useExpenseForm(group, onSuccess);
+    handleSubmit,
+  } = useExpenseForm(group, onSuccess, initialExpense);
+
+  const isEditing = Boolean(initialExpense && initialExpense.type === "expense");
 
   return (
-    <div className="bg-white p-6 rounded-xl shadow-lg border-t-4 border-blue-500">
+    <div
+      className={`bg-white p-6 rounded-xl shadow-lg border-t-4 transition-all duration-200 ${
+        isEditing
+          ? "border-blue-500 ring-2 ring-blue-200 shadow-blue-100"
+          : "border-blue-500"
+      }`}
+    >
       <form onSubmit={handleSubmit} className="space-y-4">
-
         {errorMessage && (
           <div className="p-3 text-sm font-medium text-red-800 bg-red-100 rounded-lg border border-red-200">
             {errorMessage}
           </div>
         )}
+
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <h3 className="text-lg font-bold text-slate-800">
+              {isEditing ? "Edit Expense" : "Add Expense"}
+            </h3>
+            {isEditing && (
+              <span className="inline-flex items-center gap-1 rounded-full bg-blue-100 px-2 py-0.5 text-xs font-bold text-blue-700">
+                ✏️ Updating
+              </span>
+            )}
+          </div>
+          {onCancel && (
+            <button
+              type="button"
+              className="text-sm text-slate-500 hover:text-slate-700"
+              onClick={onCancel}
+            >
+              Cancel
+            </button>
+          )}
+        </div>
 
         <input
           className="w-full border p-3 rounded-lg"
@@ -84,8 +125,18 @@ export function ExpenseForm({ group, onSuccess }: ExpenseFormProps) {
             ))}
           </div>
         </div>
-        <button disabled={isLoading} className="w-full bg-blue-600 text-white font-bold py-3 rounded-lg cursor-pointer">
-          {isLoading ? <LoadingSpinner className="mx-auto" /> : "Save Expense"}
+
+        <button
+          disabled={isLoading}
+          className="w-full bg-blue-600 text-white font-bold py-3 rounded-lg cursor-pointer"
+        >
+          {isLoading ? (
+            <LoadingSpinner className="mx-auto" />
+          ) : isEditing ? (
+            "Update Expense"
+          ) : (
+            "Save Expense"
+          )}
         </button>
       </form>
     </div>

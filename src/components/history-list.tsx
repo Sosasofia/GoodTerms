@@ -1,6 +1,16 @@
 import { Transaction } from "../lib/types";
 
-export function HistoryList({ items }: { items: Transaction[] }) {
+interface HistoryListProps {
+  items: Transaction[];
+  onEditExpense?: (item: Transaction) => void;
+  onDeleteExpense?: (transactionId: string) => void;
+}
+
+export function HistoryList({
+  items,
+  onEditExpense,
+  onDeleteExpense,
+}: HistoryListProps) {
   if (!items || items.length === 0) {
     return (
       <div className="text-center text-slate-400 py-8">
@@ -15,11 +25,13 @@ export function HistoryList({ items }: { items: Transaction[] }) {
       {items.map((item) => (
         <div
           key={`${item.type}-${item.id}`}
-          className={`p-4 rounded-xl shadow-sm border-l-4 bg-white ${item.type === "expense" ? "border-blue-400" : "border-green-400"}`}
+          className={`p-4 rounded-xl shadow-sm border-l-4 bg-white ${
+            item.type === "expense" ? "border-blue-400" : "border-green-400"
+          }`}
         >
           {item.type === "expense" ? (
-            <div className="flex justify-between items-center">
-              <div>
+            <div className="flex justify-between items-start gap-3">
+              <div className="flex-1">
                 <h3 className="font-bold">{item.description}</h3>
                 {item.note && (
                   <p className="text-xs text-slate-500 italic">
@@ -30,22 +42,48 @@ export function HistoryList({ items }: { items: Transaction[] }) {
                   {item.payer.name} paid ${item.amount}
                 </p>
               </div>
-              <div className="text-right">
-                {item.splits
-                  .filter((split) => split.debtor.id !== item.payer.id)
-                  .map((s: any) => (
-                    <div
-                      key={s.id}
-                      className={`text-xs ${
-                        s.isPaid
-                          ? "text-green-600 line-through"
-                          : "text-red-500"
-                      }`}
-                    >
-                      {s.debtor.name} {s.isPaid ? "paid" : "owes"} $
-                      {s.amount.toFixed(0)}
-                    </div>
-                  ))}
+
+              <div className="flex flex-col items-end gap-2">
+                <div className="text-right">
+                  {item.splits
+                    .filter((split) => split.debtor.id !== item.payer.id)
+                    .map((s: any) => (
+                      <div
+                        key={s.id}
+                        className={`text-xs ${
+                          s.isPaid
+                            ? "text-green-600 line-through"
+                            : "text-red-500"
+                        }`}
+                      >
+                        {s.debtor.name} {s.isPaid ? "paid" : "owes"} $
+                        {s.amount.toFixed(0)}
+                      </div>
+                    ))}
+                </div>
+
+                {(onEditExpense || onDeleteExpense) && (
+                  <div className="flex gap-2">
+                    {onEditExpense && (
+                      <button
+                        type="button"
+                        className="px-2 py-1 text-xs font-semibold text-blue-700 bg-blue-100 rounded hover:bg-blue-200"
+                        onClick={() => onEditExpense(item)}
+                      >
+                        Edit
+                      </button>
+                    )}
+                    {onDeleteExpense && (
+                      <button
+                        type="button"
+                        className="px-2 py-1 text-xs font-semibold text-red-700 bg-red-100 rounded hover:bg-red-200"
+                        onClick={() => onDeleteExpense(item.id)}
+                      >
+                        Delete
+                      </button>
+                    )}
+                  </div>
+                )}
               </div>
             </div>
           ) : (
@@ -54,8 +92,7 @@ export function HistoryList({ items }: { items: Transaction[] }) {
                 PAID
               </span>
               <span>
-                {item.sender.name} paid {item.receiver.name} $
-                {item.amount.toFixed(0)}
+                {item.sender.name} paid {item.receiver.name} ${item.amount.toFixed(0)}
               </span>
             </div>
           )}
