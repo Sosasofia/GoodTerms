@@ -25,6 +25,37 @@ function normalizeExpenseSplits(splits: any[]) {
   return { normalized, total };
 }
 
+function normalizeDueDate(dueDate: string | null | undefined) {
+  if (!dueDate) {
+    return null;
+  }
+
+  const parsed = new Date(dueDate);
+  if (Number.isNaN(parsed.getTime())) {
+    throw new Error("Due date is invalid.");
+  }
+
+  return parsed;
+}
+
+function getSafeErrorMessage(message: string | undefined, fallback: string) {
+  const rawMessage = message || fallback;
+
+  if (rawMessage.includes("Unknown argument `dueDate`")) {
+    return "Due date support is not available for this database yet. Please sync the schema and try again.";
+  }
+
+  if (rawMessage.includes("Invalid `prisma.transaction.create()` invocation")) {
+    return "Could not create the expense. Please check the entry details and try again.";
+  }
+
+  if (rawMessage.includes("Invalid `prisma.transaction.update()` invocation")) {
+    return "Could not update the expense. Please check the entry details and try again.";
+  }
+
+  return rawMessage;
+}
+
 async function authorizeGroupAccess(
   req: NextRequest,
   groupId: string,
@@ -107,9 +138,10 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
     }
 
     const body = await request.json();
-    const { description, amount, payerId, splits, note } = body;
+    const { description, amount, payerId, splits, note, dueDate } = body;
 
     const parsedAmount = Number(amount);
+    const parsedDueDate = normalizeDueDate(dueDate);
     if (Number.isNaN(parsedAmount) || parsedAmount <= 0) {
       return NextResponse.json({ error: "Invalid amount." }, { status: 400 });
     }
@@ -159,6 +191,7 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
         description: description.trim(),
         amount: parsedAmount,
         note,
+        dueDate: parsedDueDate,
         type: "expense",
         date: new Date(),
         group: { connect: { id: groupId } },
@@ -181,7 +214,7 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
   } catch (error: any) {
     console.error("Transaction Error:", error.message);
     return NextResponse.json(
-      { error: error.message || "Failed to create transaction" },
+      { error: getSafeErrorMessage(error.message, "Failed to create transaction") },
       { status: 400 },
     );
   }
@@ -205,7 +238,10 @@ export async function PUT(request: NextRequest, { params }: RouteContext) {
       payerId,
       splits,
       note,
+      dueDate,
     } = body;
+
+    const parsedDueDate = normalizeDueDate(dueDate);
 
     if (!transactionId) {
       return NextResponse.json({ error: "Missing transaction id." }, { status: 400 });
@@ -274,6 +310,7 @@ export async function PUT(request: NextRequest, { params }: RouteContext) {
           description: description.trim(),
           amount: parsedAmount,
           note,
+          dueDate: parsedDueDate,
           payer: { connect: { id: payerId } },
           splits: {
             create: normalized.map((split) => ({
@@ -298,7 +335,7 @@ export async function PUT(request: NextRequest, { params }: RouteContext) {
   } catch (error: any) {
     console.error("Update transaction error:", error.message);
     return NextResponse.json(
-      { error: error.message || "Failed to update expense" },
+      { error: getSafeErrorMessage(error.message, "Failed to update expense") },
       { status: 400 },
     );
   }

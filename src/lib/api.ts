@@ -5,6 +5,7 @@ export interface ExpensePayload {
   description: string;
   amount: number;
   note?: string;
+  dueDate?: string | null;
   payerId: string;
   splits: { debtorId: string; amount: number }[];
 }
@@ -76,7 +77,7 @@ const fetcher = async <T>(
           errorMessage = errorText;
         }
       } catch {
-        // Keep the default status-derived message.
+
       }
     }
 

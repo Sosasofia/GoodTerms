@@ -19,10 +19,29 @@ export function HistoryList({
     );
   }
 
+  const sortedItems = [...items].sort((a, b) => {
+    const dateA =
+      a.type === "expense" && a.dueDate
+        ? new Date(a.dueDate).getTime()
+        : Number.POSITIVE_INFINITY;
+    const dateB =
+      b.type === "expense" && b.dueDate
+        ? new Date(b.dueDate).getTime()
+        : Number.POSITIVE_INFINITY;
+
+    if (dateA !== dateB) {
+      return dateA - dateB;
+    }
+
+    const timestampA = new Date((a as any).date ?? (a as any).createdAt ?? 0).getTime();
+    const timestampB = new Date((b as any).date ?? (b as any).createdAt ?? 0).getTime();
+    return timestampB - timestampA;
+  });
+
   return (
     <div className="space-y-4 pb-20">
       <h2 className="text-xl font-bold text-slate-800">History</h2>
-      {items.map((item) => (
+      {sortedItems.map((item) => (
         <div
           key={`${item.type}-${item.id}`}
           className={`p-4 rounded-xl shadow-sm border-l-4 bg-white ${
@@ -41,6 +60,12 @@ export function HistoryList({
                 <p className="text-xs text-slate-500">
                   {item.payer.name} paid ${item.amount}
                 </p>
+                {item.dueDate && (
+                  <p className="mt-2 inline-flex items-center gap-1 rounded-full border border-amber-300 bg-gradient-to-r from-amber-100 to-orange-100 px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.12em] text-amber-900 shadow-sm">
+                    <span aria-hidden="true">📅</span>
+                    Due {new Date(item.dueDate).toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" })}
+                  </p>
+                )}
               </div>
 
               <div className="flex flex-col items-end gap-2">

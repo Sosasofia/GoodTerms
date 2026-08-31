@@ -22,6 +22,8 @@ export function ExpenseForm({
     setAmount,
     note,
     setNote,
+    dueDate,
+    setDueDate,
     payerId,
     setPayerId,
     involved,
@@ -89,6 +91,29 @@ export function ExpenseForm({
           value={amount}
           onChange={(e) => setAmount(e.target.value)}
         />
+
+        <div
+          className={`rounded-xl border p-3 transition-all ${
+            dueDate
+              ? "border-amber-300 bg-amber-50 shadow-sm"
+              : "border-slate-200 bg-slate-50"
+          }`}
+        >
+          <label className="mb-1 block text-xs font-bold uppercase tracking-wide text-slate-500">
+            Due date (optional)
+          </label>
+          <input
+            type="date"
+            className="w-full border border-slate-200 bg-white p-3 rounded-lg text-slate-700"
+            value={dueDate}
+            onChange={(e) => setDueDate(e.target.value)}
+          />
+          {dueDate && (
+            <p className="mt-2 text-[10px] font-bold uppercase tracking-[0.12em] text-amber-800">
+              Scheduled for {new Date(`${dueDate}T12:00:00`).toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" })}
+            </p>
+          )}
+        </div>
 
         <div>
           <label className="text-xs font-bold text-slate-500">PAID BY</label>

@@ -2,6 +2,13 @@ import { useEffect, useState } from "react";
 import { Group, Transaction } from "@/lib/types";
 import { createExpense, updateExpense } from "@/lib/api";
 
+const formatDateForInput = (value?: string | null) => {
+  if (!value) return "";
+  const parsed = new Date(value);
+  if (Number.isNaN(parsed.getTime())) return "";
+  return parsed.toISOString().slice(0, 10);
+};
+
 export function useExpenseForm(
   group: Group,
   onSuccess: () => void,
@@ -10,6 +17,7 @@ export function useExpenseForm(
   const [desc, setDesc] = useState("");
   const [amount, setAmount] = useState("");
   const [note, setNote] = useState("");
+  const [dueDate, setDueDate] = useState("");
   const [payerId, setPayerId] = useState(group.members[0]?.id || "");
   const [involved, setInvolved] = useState<string[]>(
     group.members.map((m) => m.id),
@@ -21,6 +29,7 @@ export function useExpenseForm(
     setDesc("");
     setAmount("");
     setNote("");
+    setDueDate("");
     setPayerId(group.members[0]?.id || "");
     setInvolved(group.members.map((m) => m.id));
   };
@@ -34,6 +43,7 @@ export function useExpenseForm(
     setDesc(initialExpense.description);
     setAmount(String(initialExpense.amount));
     setNote(initialExpense.note || "");
+    setDueDate(formatDateForInput(initialExpense.dueDate || null));
     setPayerId(initialExpense.payer.id);
     setInvolved(initialExpense.splits.map((split) => split.debtor.id));
   }, [group.members, initialExpense]);
@@ -68,6 +78,7 @@ export function useExpenseForm(
         description: desc.trim(),
         amount: parsedAmount,
         note,
+        dueDate: dueDate ? new Date(`${dueDate}T12:00:00`).toISOString() : null,
         payerId,
         splits: involved.map((memberId) => ({
           debtorId: memberId,
@@ -85,7 +96,12 @@ export function useExpenseForm(
       setIsLoading(false);
       onSuccess();
     } catch (error: any) {
-      setErrorMessage(error.message || "An unexpected error occurred.");
+      const rawMessage = error?.message || "An unexpected error occurred.";
+      const safeMessage = rawMessage.includes("Unknown argument")
+        ? "Could not save the expense. Please check the entry details and try again."
+        : rawMessage;
+
+      setErrorMessage(safeMessage);
       setIsLoading(false);
     }
   };
@@ -97,6 +113,8 @@ export function useExpenseForm(
     setAmount,
     note,
     setNote,
+    dueDate,
+    setDueDate,
     payerId,
     setPayerId,
     involved,

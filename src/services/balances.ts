@@ -4,6 +4,7 @@ export interface SettlementSuggestion {
   fromUserId: string;
   toUserId: string;
   amount: number;
+  dueDate?: string | null;
 }
 
 export function calculateBalances(group: Group, items: Transaction[]) {
@@ -100,25 +101,49 @@ export function getUserSettlementSuggestions(
   items: Transaction[],
   payerId: string,
 ): SettlementSuggestion[] {
-  const entries = new Map<string, number>();
+  const entries = new Map<
+    string,
+    { amount: number; dueDate: string | null }
+  >();
 
   for (const item of items || []) {
     if (item.type !== "expense") continue;
     if (!item.payer || item.payer.id === payerId) continue;
 
+    const pendingDueDate = item.dueDate ? new Date(item.dueDate) : null;
+
     for (const split of item.splits || []) {
       if (split.debtor.id !== payerId || split.isPaid) continue;
 
-      const currentAmount = entries.get(item.payer.id) || 0;
-      entries.set(item.payer.id, currentAmount + split.amount);
+      const current = entries.get(item.payer.id) || { amount: 0, dueDate: null };
+      current.amount += split.amount;
+
+      if (
+        pendingDueDate &&
+        (!current.dueDate || pendingDueDate.getTime() < new Date(current.dueDate).getTime())
+      ) {
+        current.dueDate = pendingDueDate.toISOString();
+      }
+
+      entries.set(item.payer.id, current);
     }
   }
 
   return [...entries.entries()]
-    .map(([receiverId, amount]) => ({
+    .map(([receiverId, details]) => ({
       fromUserId: payerId,
       toUserId: receiverId,
-      amount: Number(amount.toFixed(2)),
+      amount: Number(details.amount.toFixed(2)),
+      ...(details.dueDate ? { dueDate: details.dueDate } : {}),
     }))
-    .sort((a, b) => b.amount - a.amount);
+    .sort((a, b) => {
+      const dueA = a.dueDate ? new Date(a.dueDate).getTime() : Number.POSITIVE_INFINITY;
+      const dueB = b.dueDate ? new Date(b.dueDate).getTime() : Number.POSITIVE_INFINITY;
+
+      if (dueA !== dueB) {
+        return dueA - dueB;
+      }
+
+      return b.amount - a.amount;
+    });
 }

@@ -18,6 +18,7 @@ export interface Expense {
   description: string;
   amount: number;
   note?: string;
+  dueDate?: string | null;
   payer: User;
   splits: Split[];
 }

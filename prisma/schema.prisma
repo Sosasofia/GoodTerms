@@ -38,12 +38,13 @@ model Group {
 }
 
 model Transaction {
-  id          String   @id @default(uuid())
+  id          String    @id @default(uuid())
   description String
   note        String?
   amount      Float
-  date        DateTime @default(now())
-  type        String   @default("expense")
+  date        DateTime  @default(now())
+  dueDate     DateTime?
+  type        String    @default("expense")
 
   groupId     String
   group       Group    @relation(fields: [groupId], references: [id], onDelete: Cascade)

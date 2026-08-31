@@ -139,4 +139,49 @@ describe('settlement optimization', () => {
       { fromUserId: 'carol', toUserId: 'bob', amount: 60 },
     ]);
   });
+
+  it('prioritizes expenses with earlier due dates in the payer suggestions', () => {
+    const alice = { id: 'alice', name: 'Alice', clerkId: 'c1' };
+    const bob = { id: 'bob', name: 'Bob', clerkId: 'c2' };
+    const carol = { id: 'carol', name: 'Carol', clerkId: 'c3' };
+
+    const group = {
+      id: 'group-4',
+      name: 'Due Date Trip',
+      code: 'DUE-2025',
+      members: [alice, bob, carol],
+    };
+
+    const items = [
+      {
+        id: 'expense-6',
+        type: 'expense',
+        description: 'Flights',
+        amount: 150,
+        dueDate: '2026-09-10T00:00:00.000Z',
+        payer: alice,
+        splits: [
+          { id: 'split-10', debtor: carol, amount: 75, isPaid: false },
+          { id: 'split-11', debtor: bob, amount: 75, isPaid: false },
+        ],
+      },
+      {
+        id: 'expense-7',
+        type: 'expense',
+        description: 'Hotel',
+        amount: 120,
+        dueDate: '2026-09-01T00:00:00.000Z',
+        payer: bob,
+        splits: [
+          { id: 'split-12', debtor: carol, amount: 60, isPaid: false },
+          { id: 'split-13', debtor: bob, amount: 60, isPaid: false },
+        ],
+      },
+    ];
+
+    expect(getUserSettlementSuggestions(group, items, 'carol')).toEqual([
+      { fromUserId: 'carol', toUserId: 'bob', amount: 60, dueDate: '2026-09-01T00:00:00.000Z' },
+      { fromUserId: 'carol', toUserId: 'alice', amount: 75, dueDate: '2026-09-10T00:00:00.000Z' },
+    ]);
+  });
 });

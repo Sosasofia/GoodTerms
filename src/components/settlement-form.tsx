@@ -94,6 +94,11 @@ export function SettlementForm({
                       <div className="text-xs text-slate-500">
                         You owe {toMember.name} ${suggestion.amount.toFixed(2)}
                       </div>
+                      {suggestion.dueDate && (
+                        <div className="mt-1 text-[10px] font-semibold uppercase tracking-wide text-amber-700">
+                          Due {new Date(suggestion.dueDate).toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" })}
+                        </div>
+                      )}
                     </div>
                     <div className="flex items-center gap-2">
                       <span className="font-bold text-green-700">
