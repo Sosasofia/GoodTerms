@@ -20,6 +20,7 @@ export async function GET(req: Request) {
         },
       },
       include: {
+        owner: true,
         members: true,
       },
       orderBy: { createdAt: "desc" },
@@ -54,7 +55,8 @@ export async function POST(req: Request) {
         name,
         code,
         pin: pin || null,
-        members: {
+        isArchived: false,
+        owner: {
           connectOrCreate: {
             where: { clerkId: userId },
             create: {
@@ -64,6 +66,13 @@ export async function POST(req: Request) {
             },
           },
         },
+        members: {
+          connect: { clerkId: userId },
+        },
+      },
+      include: {
+        owner: true,
+        members: true,
       },
     });
 

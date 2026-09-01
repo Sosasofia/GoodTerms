@@ -1,5 +1,6 @@
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
+import { useEffect, useRef, useState } from "react";
 import { Group } from "../lib/types";
 import {
   SignInButton,
@@ -27,7 +28,36 @@ export function Sidebar({
   hideDemoButton,
 }: SidebarProps) {
   const pathname = usePathname();
+  const router = useRouter();
   const { user } = useUser();
+  const menuRef = useRef<HTMLDivElement | null>(null);
+  const [openMenuId, setOpenMenuId] = useState<string | null>(null);
+  const [copiedGroupId, setCopiedGroupId] = useState<string | null>(null);
+
+  useEffect(() => {
+    const handlePointerDown = (event: MouseEvent) => {
+      if (!menuRef.current) return;
+      if (!menuRef.current.contains(event.target as Node)) {
+        setOpenMenuId(null);
+      }
+    };
+
+    document.addEventListener("mousedown", handlePointerDown);
+    return () => document.removeEventListener("mousedown", handlePointerDown);
+  }, []);
+
+  const isGroupOwner = (group: Group) =>
+    Boolean(user?.id && group.owner?.clerkId === user.id);
+
+  const handleCopyCode = async (group: Group) => {
+    try {
+      await navigator.clipboard.writeText(group.code);
+      setCopiedGroupId(group.id);
+      window.setTimeout(() => setCopiedGroupId((current) => (current === group.id ? null : current)), 1200);
+    } catch (error) {
+      console.error("Failed to copy group code", error);
+    }
+  };
 
   return (
     <div className="w-full h-full bg-[#0F172A] text-white flex flex-col border-r border-slate-800 shrink-0">
@@ -53,18 +83,68 @@ export function Sidebar({
           <>
             {(groups || []).map((group) => {
               const isActive = pathname.includes(group.id);
+              const owner = isGroupOwner(group);
+
               return (
-                <Link
+                <div
                   key={group.id}
-                  href={`/groups/${group.id}`}
-                  className={`block px-3 py-2 rounded-lg text-sm font-medium transition-all ${
+                  ref={openMenuId === group.id ? menuRef : undefined}
+                  className={`relative flex items-center gap-2 rounded-lg transition-all ${
                     isActive
                       ? "bg-blue-600 text-white shadow-lg shadow-blue-900/50"
                       : "text-slate-400 hover:text-white hover:bg-slate-800"
                   }`}
                 >
-                  # {group.name}
-                </Link>
+                  <Link
+                    href={`/groups/${group.id}`}
+                    className="flex-1 block px-3 py-2 text-sm font-medium"
+                  >
+                    # {group.name}
+                  </Link>
+
+                  <div className="relative mr-2">
+                    <button
+                      type="button"
+                      aria-label={`More actions for ${group.name}`}
+                      onClick={() =>
+                        setOpenMenuId((current) => (current === group.id ? null : group.id))
+                      }
+                      className="flex h-7 w-7 items-center justify-center rounded-md border border-slate-700 bg-slate-800/80 text-base font-bold text-slate-200 transition-colors hover:bg-slate-700"
+                    >
+                      ⋮
+                    </button>
+
+                    {openMenuId === group.id && (
+                      <div className="absolute right-0 top-full z-30 mt-2 w-56 overflow-hidden rounded-xl border border-slate-700 bg-slate-900 shadow-2xl">
+                        <button
+                          type="button"
+                          disabled={!owner}
+                          onClick={() => {
+                            if (!owner) return;
+                            setOpenMenuId(null);
+                            router.push(`/groups/${group.id}/settings`);
+                          }}
+                          className="flex w-full items-center justify-between px-3 py-2.5 text-left text-sm font-medium text-white transition-colors hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-40"
+                        >
+                          <span>Edit group</span>
+                          {!owner && <span className="text-[10px] uppercase tracking-wide text-slate-400">Locked</span>}
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={() => {
+                            void handleCopyCode(group);
+                            setOpenMenuId(null);
+                          }}
+                          className="flex w-full items-center justify-between px-3 py-2.5 text-left text-sm font-medium text-white transition-colors hover:bg-slate-800"
+                        >
+                          <span>Copy group code</span>
+                          {copiedGroupId === group.id && <span className="text-[10px] uppercase tracking-wide text-emerald-400">Copied</span>}
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                </div>
               );
             })}
 

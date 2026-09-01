@@ -10,7 +10,7 @@ export async function POST(req: Request) {
 
   const group = await prisma.group.findUnique({
     where: { code },
-    include: { members: true },
+    include: { owner: true, members: true },
   });
 
   if (!group) {
@@ -80,14 +80,18 @@ export async function POST(req: Request) {
     );
   }
 
-  await prisma.group.update({
+  const updatedGroup = await prisma.group.update({
     where: { id: group.id },
     data: {
       members: {
         connect: { id: dbUser.id },
       },
     },
+    include: {
+      owner: true,
+      members: true,
+    },
   });
 
-  return NextResponse.json(group);
+  return NextResponse.json(updatedGroup);
 }

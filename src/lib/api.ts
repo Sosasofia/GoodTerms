@@ -26,6 +26,13 @@ export interface JoinGroupPayload {
   action?: "join" | "claim";
 }
 
+export interface GroupSettingsPayload {
+  pin?: string | null;
+  isArchived?: boolean;
+  action?: "transferOwner";
+  memberId?: string;
+}
+
 export class ApiError extends Error {
   requiresConfirmation?: boolean;
 
@@ -115,6 +122,27 @@ export const joinGroup = (data: JoinGroupPayload) =>
   fetcher<Group>("/api/groups/join", {
     method: "POST",
     body: JSON.stringify(data),
+  });
+
+export const updateGroupSettings = (
+  groupId: string,
+  data: GroupSettingsPayload,
+) =>
+  fetcher<Group>(`/api/groups/${groupId}`, {
+    method: "PATCH",
+    body: JSON.stringify(data),
+  });
+
+export const leaveGroup = (groupId: string) =>
+  fetcher<Group>(`/api/groups/${groupId}`, {
+    method: "DELETE",
+    body: JSON.stringify({ action: "leave" }),
+  });
+
+export const removeGroupMember = (groupId: string, memberId: string) =>
+  fetcher<Group>(`/api/groups/${groupId}`, {
+    method: "DELETE",
+    body: JSON.stringify({ action: "removeMember", memberId }),
   });
 
 export const createExpense = (groupId: string, data: ExpensePayload) => {

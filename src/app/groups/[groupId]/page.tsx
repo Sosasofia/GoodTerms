@@ -6,7 +6,7 @@ import { deleteExpense, getGroupTransactions } from "@/lib/api";
 import { Dashboard, DashboardSkeleton } from "@/components/dashboard";
 import { useGroups } from "@/hooks/use-groups";
 import { getGroupViewerId } from "@/lib/identity";
-import { Transaction } from "@/lib/types";
+import { Group, Transaction } from "@/lib/types";
 
 export default function GroupPage({
   params,
@@ -19,6 +19,7 @@ export default function GroupPage({
 
   const activeGroup = groups.find((g) => g.id === groupId);
   const viewerId = getGroupViewerId(activeGroup, user?.id);
+  const [groupState, setGroupState] = useState<Group | null>(activeGroup ?? null);
 
   const [items, setItems] = useState<Transaction[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -33,6 +34,10 @@ export default function GroupPage({
     }
   }, [groupId]);
 
+  useEffect(() => {
+    setGroupState(activeGroup ?? null);
+  }, [activeGroup]);
+
   if (groupsLoading || (isLoading && items.length === 0)) {
     return (
       <div className="p-4 md:p-8">
@@ -41,7 +46,7 @@ export default function GroupPage({
     );
   }
 
-  if (!activeGroup) return null;
+  if (!activeGroup || !groupState) return null;
 
   const refreshTransactions = () => {
     setEditingExpense(null);
@@ -87,7 +92,7 @@ export default function GroupPage({
   return (
     <div className="p-4 md:p-8">
       <Dashboard
-        group={activeGroup}
+        group={groupState}
         items={items}
         viewerId={viewerId}
         onUpdate={refreshTransactions}

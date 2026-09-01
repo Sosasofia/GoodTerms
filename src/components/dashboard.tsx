@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useMemo, useEffect } from "react";
+import { useUser } from "@clerk/nextjs";
 import { Group, Transaction } from "../lib/types";
 import { ExpenseForm } from "./expense-form";
 import { HistoryList } from "./history-list";
@@ -30,9 +31,15 @@ export function Dashboard({
   onDeleteExpense,
   onCancelEdit,
 }: DashboardProps) {
+  const { user } = useUser();
   const [activeTab, setActiveTab] = useState<"expense" | "settlement">(
     "expense",
   );
+  const [groupState, setGroupState] = useState(group);
+
+  useEffect(() => {
+    setGroupState(group);
+  }, [group]);
 
   useEffect(() => {
     if (editingExpense) {
@@ -40,10 +47,13 @@ export function Dashboard({
     }
   }, [editingExpense]);
 
-  const balances = useMemo(() => calculateBalances(group, items), [items, group]);
+  const balances = useMemo(() => calculateBalances(groupState, items), [items, groupState]);
   const settlementSuggestions = useMemo(
-    () => getOptimizedSettlements(group, items),
-    [group, items],
+    () => getOptimizedSettlements(groupState, items),
+    [groupState, items],
+  );
+  const isGroupOwner = Boolean(
+    user?.id && groupState.owner?.clerkId === user.id,
   );
 
   return (
@@ -51,21 +61,27 @@ export function Dashboard({
       <div className="flex justify-between items-end mb-6 border-b pb-4">
         <div>
           <h2 className="text-3xl font-extrabold text-slate-900">
-            {group.name}
+            {groupState.name}
           </h2>
 
           <div className="flex flex-wrap items-center gap-3 mt-2 text-sm font-medium">
             <span className="bg-slate-100 text-slate-600 px-3 py-1 rounded-md font-mono border border-slate-200">
-              Code:{" "}
+              Code: {" "}
               <span className="font-bold text-slate-900 select-all">
-                {group.code}
+                {groupState.code}
               </span>
             </span>
 
-            {group.pin && (
+            {groupState.pin && (
               <span className="bg-yellow-50 text-yellow-700 px-3 py-1 rounded-md font-mono border border-yellow-200 flex items-center gap-1">
-                🔒 PIN:{" "}
-                <span className="font-bold select-all">{group.pin}</span>
+                🔒 PIN: {" "}
+                <span className="font-bold select-all">{groupState.pin}</span>
+              </span>
+            )}
+
+            {groupState.isArchived && (
+              <span className="bg-slate-200 text-slate-700 px-3 py-1 rounded-md border border-slate-300 font-bold uppercase tracking-wide text-[10px]">
+                Archived
               </span>
             )}
           </div>
@@ -125,14 +141,14 @@ export function Dashboard({
       <div className="mb-8">
         {activeTab === "expense" ? (
           <ExpenseForm
-            group={group}
+            group={groupState}
             onSuccess={onUpdate}
             initialExpense={editingExpense}
             onCancel={onCancelEdit}
           />
         ) : (
           <SettlementForm
-            group={group}
+            group={groupState}
             items={items}
             viewerId={viewerId}
             onSuccess={onUpdate}

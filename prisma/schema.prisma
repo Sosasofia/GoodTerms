@@ -16,12 +16,13 @@ model User {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  groups    Group[]  @relation("GroupMembers")
+  groups       Group[]  @relation("GroupMembers")
+  ownedGroups  Group[]  @relation("GroupOwner")
 
   paidTransactions     Transaction[] @relation("Payer")
   sentTransactions     Transaction[] @relation("Sender")
   receivedTransactions Transaction[] @relation("Receiver")
-  
+
   splits               Split[]       @relation("Debtor")
 }
 
@@ -30,8 +31,12 @@ model Group {
   name      String
   code      String   @unique
   pin       String?
+  isArchived Boolean @default(false)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  ownerId    String?
+  owner      User?    @relation("GroupOwner", fields: [ownerId], references: [id])
 
   members      User[]        @relation("GroupMembers")
   transactions Transaction[]

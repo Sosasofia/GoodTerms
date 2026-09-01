@@ -7,8 +7,11 @@ export interface User {
 export interface Group {
   id: string;
   name: string;
-  pin?: string;
+  pin?: string | null;
   code: string;
+  isArchived?: boolean;
+  ownerId?: string | null;
+  owner?: { id: string; clerkId?: string | null; name: string } | null;
   members: User[];
 }
 
