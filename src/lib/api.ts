@@ -83,9 +83,7 @@ const fetcher = async <T>(
         if (errorText) {
           errorMessage = errorText;
         }
-      } catch {
-
-      }
+      } catch {}
     }
 
     throw new ApiError(errorMessage, requiresConfirmation);
@@ -175,3 +173,10 @@ export const createSettlement = (data: SettlementPayload) =>
     method: "POST",
     body: JSON.stringify(data),
   });
+
+export async function addGroupMember(groupId: string, name: string) {
+  return fetcher<Group>(`/api/groups/${groupId}/add-member`, {
+    method: "POST",
+    body: JSON.stringify({ groupId, name }),
+  });
+}
