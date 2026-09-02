@@ -33,9 +33,9 @@ export async function POST(req: Request) {
       );
     }
 
-    const existingMember = await prisma.user.findFirst({
+    const existingMember = await prisma.member.findFirst({
       where: {
-        groups: { some: { id: groupId } },
+        groupId: groupId,
         name: name.trim(),
       },
     });
@@ -58,7 +58,7 @@ export async function POST(req: Request) {
       },
       include: {
         owner: true,
-        members: true,
+        members: { include: { user: true } },
       },
     });
 

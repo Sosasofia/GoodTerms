@@ -10,7 +10,7 @@ export async function POST(req: Request) {
 
   const group = await prisma.group.findUnique({
     where: { code },
-    include: { owner: true, members: true },
+    include: { owner: true, members: { include: { user: true } } },
   });
 
   if (!group) {
@@ -27,7 +27,7 @@ export async function POST(req: Request) {
     );
 
     if (existingMember) {
-      if (existingMember.clerkId) {
+      if (existingMember.user?.clerkId) {
         return NextResponse.json(
           { error: "This name belongs to a registered user. Please sign in." },
           { status: 400 },
@@ -40,13 +40,6 @@ export async function POST(req: Request) {
           { status: 409 },
         );
       }
-
-      await prisma.user.update({
-        where: { id: existingMember.id },
-        data: { guestId: guestId },
-      });
-
-      return NextResponse.json(group);
     }
   }
 
@@ -80,16 +73,36 @@ export async function POST(req: Request) {
     );
   }
 
-  const updatedGroup = await prisma.group.update({
+  const isAlreadyMember = group.members.some((m) => m.userId === dbUser.id);
+
+  if (!isAlreadyMember) {
+    const incomingName =
+      userId && clerkUser ? clerkUser.firstName || "User" : guestName;
+    const existingMember = group.members.find(
+      (m) => m.name.toLowerCase() === incomingName?.toLowerCase(),
+    );
+
+    if (existingMember && (!existingMember.userId || action === "claim")) {
+      await prisma.member.update({
+        where: { id: existingMember.id },
+        data: { userId: dbUser.id },
+      });
+    } else {
+      await prisma.member.create({
+        data: {
+          name: incomingName,
+          groupId: group.id,
+          userId: dbUser.id,
+        },
+      });
+    }
+  }
+
+  const updatedGroup = await prisma.group.findUnique({
     where: { id: group.id },
-    data: {
-      members: {
-        connect: { id: dbUser.id },
-      },
-    },
     include: {
       owner: true,
-      members: true,
+      members: { include: { user: true } },
     },
   });
 

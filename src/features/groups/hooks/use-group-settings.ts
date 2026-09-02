@@ -41,10 +41,12 @@ export function useGroupSettings(
   const [isAddingMember, setIsAddingMember] = useState(false);
 
   const isCurrentUserMember = Boolean(
-    user?.id && group.members.some((member) => member.clerkId === user.id),
+    user?.id &&
+    group.members.some((member) => member.user?.clerkId === user.id),
   );
+
   const eligibleTransferMembers = group.members.filter(
-    (member) => member.id !== group.ownerId,
+    (member) => member.userId !== group.ownerId,
   );
 
   const handleSave = async () => {

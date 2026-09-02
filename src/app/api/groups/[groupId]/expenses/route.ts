@@ -12,7 +12,9 @@ function normalizeExpenseSplits(splits: any[]) {
     const amount = Number(split.amount);
 
     if (!debtorId || Number.isNaN(amount) || amount <= 0) {
-      throw new Error("Each split must include a valid debtor and positive amount.");
+      throw new Error(
+        "Each split must include a valid debtor and positive amount.",
+      );
     }
 
     return {
@@ -45,11 +47,11 @@ function getSafeErrorMessage(message: string | undefined, fallback: string) {
     return "Due date support is not available for this database yet. Please sync the schema and try again.";
   }
 
-  if (rawMessage.includes("Invalid `prisma.transaction.create()` invocation")) {
+  if (rawMessage.includes("Invalid `prisma.expense.create()` invocation")) {
     return "Could not create the expense. Please check the entry details and try again.";
   }
 
-  if (rawMessage.includes("Invalid `prisma.transaction.update()` invocation")) {
+  if (rawMessage.includes("Invalid `prisma.expense.update()` invocation")) {
     return "Could not update the expense. Please check the entry details and try again.";
   }
 
@@ -64,14 +66,20 @@ async function authorizeGroupAccess(
   const guestId = req.headers.get("x-guest-id");
 
   if (!userId && !guestId) {
-    return { error: NextResponse.json({ error: "Unauthorized" }, { status: 401 }) };
+    return {
+      error: NextResponse.json({ error: "Unauthorized" }, { status: 401 }),
+    };
   }
 
   const group = await prisma.group.findFirst({
     where: {
       id: groupId,
       members: {
-        some: userId ? { clerkId: userId } : { guestId },
+        some: {
+          user: userId
+            ? { clerkId: userId }
+            : { guestId: guestId ?? undefined },
+        },
       },
     },
     include: {
@@ -104,7 +112,7 @@ export async function GET(
       return authResult.error;
     }
 
-    const transactions = await prisma.transaction.findMany({
+    const expenses = await prisma.expense.findMany({
       where: { groupId },
       include: {
         payer: true,
@@ -117,9 +125,9 @@ export async function GET(
       orderBy: { date: "desc" },
     });
 
-    return NextResponse.json(transactions);
+    return NextResponse.json(expenses);
   } catch (error) {
-    console.error("Error fetching transactions:", error);
+    console.error("Error fetching expenses:", error);
     return NextResponse.json(
       { error: "Internal Server Error" },
       { status: 500 },
@@ -164,7 +172,10 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
     );
 
     if (!validMemberIds.has(payerId)) {
-      return NextResponse.json({ error: "Payer is not a member of this group." }, { status: 400 });
+      return NextResponse.json(
+        { error: "Payer is not a member of this group." },
+        { status: 400 },
+      );
     }
 
     const { normalized, total } = normalizeExpenseSplits(splits);
@@ -186,7 +197,7 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
       );
     }
 
-    const transaction = await prisma.transaction.create({
+    const expense = await prisma.expense.create({
       data: {
         description: description.trim(),
         amount: parsedAmount,
@@ -209,12 +220,13 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
         payer: true,
       },
     });
-
-    return NextResponse.json(transaction);
+    return NextResponse.json(expense);
   } catch (error: any) {
-    console.error("Transaction Error:", error.message);
+    console.error("Expense Error:", error.message);
     return NextResponse.json(
-      { error: getSafeErrorMessage(error.message, "Failed to create transaction") },
+      {
+        error: getSafeErrorMessage(error.message, "Failed to create expense"),
+      },
       { status: 400 },
     );
   }
@@ -231,20 +243,16 @@ export async function PUT(request: NextRequest, { params }: RouteContext) {
     }
 
     const body = await request.json();
-    const {
-      transactionId,
-      description,
-      amount,
-      payerId,
-      splits,
-      note,
-      dueDate,
-    } = body;
+    const { expenseId, description, amount, payerId, splits, note, dueDate } =
+      body;
 
     const parsedDueDate = normalizeDueDate(dueDate);
 
-    if (!transactionId) {
-      return NextResponse.json({ error: "Missing transaction id." }, { status: 400 });
+    if (!expenseId) {
+      return NextResponse.json(
+        { error: "Missing expense id." },
+        { status: 400 },
+      );
     }
 
     const parsedAmount = Number(amount);
@@ -264,12 +272,15 @@ export async function PUT(request: NextRequest, { params }: RouteContext) {
       );
     }
 
-    const existing = await prisma.transaction.findFirst({
-      where: { id: transactionId, groupId: groupId, type: "expense" },
+    const existing = await prisma.expense.findFirst({
+      where: { id: expenseId, groupId: groupId, type: "expense" },
     });
 
     if (!existing) {
-      return NextResponse.json({ error: "Expense not found." }, { status: 404 });
+      return NextResponse.json(
+        { error: "Expense not found." },
+        { status: 404 },
+      );
     }
 
     const validMemberIds = new Set(
@@ -277,7 +288,10 @@ export async function PUT(request: NextRequest, { params }: RouteContext) {
     );
 
     if (!validMemberIds.has(payerId)) {
-      return NextResponse.json({ error: "Payer is not a member of this group." }, { status: 400 });
+      return NextResponse.json(
+        { error: "Payer is not a member of this group." },
+        { status: 400 },
+      );
     }
 
     const { normalized, total } = normalizeExpenseSplits(splits);
@@ -301,10 +315,10 @@ export async function PUT(request: NextRequest, { params }: RouteContext) {
 
     const updated = await prisma.$transaction(async (tx) => {
       await tx.split.deleteMany({
-        where: { transactionId: existing.id },
+        where: { expenseId: existing.id },
       });
 
-      return tx.transaction.update({
+      return tx.expense.update({
         where: { id: existing.id },
         data: {
           description: description.trim(),
@@ -333,7 +347,7 @@ export async function PUT(request: NextRequest, { params }: RouteContext) {
 
     return NextResponse.json(updated);
   } catch (error: any) {
-    console.error("Update transaction error:", error.message);
+    console.error("Update expense error:", error.message);
     return NextResponse.json(
       { error: getSafeErrorMessage(error.message, "Failed to update expense") },
       { status: 400 },
@@ -351,37 +365,42 @@ export async function DELETE(request: NextRequest, { params }: RouteContext) {
       return authResult.error;
     }
 
-    let body: { transactionId?: string } = {};
+    let body: { expenseId?: string } = {};
     try {
       body = await request.json();
     } catch {
       body = {};
     }
 
-    const { transactionId } = body;
-    if (!transactionId) {
-      return NextResponse.json({ error: "Missing transaction id." }, { status: 400 });
+    const { expenseId } = body;
+    if (!expenseId) {
+      return NextResponse.json(
+        { error: "Missing expense id." },
+        { status: 400 },
+      );
     }
 
-    const existing = await prisma.transaction.findFirst({
-      where: { id: transactionId, groupId, type: "expense" },
+    const existing = await prisma.expense.findFirst({
+      where: { id: expenseId, groupId, type: "expense" },
     });
 
     if (!existing) {
-      return NextResponse.json({ error: "Expense not found." }, { status: 404 });
+      return NextResponse.json(
+        { error: "Expense not found." },
+        { status: 404 },
+      );
     }
 
-    await prisma.transaction.delete({
+    await prisma.expense.delete({
       where: { id: existing.id },
     });
 
     return NextResponse.json({ success: true });
   } catch (error: any) {
-    console.error("Delete transaction error:", error.message);
+    console.error("Delete expense error:", error.message);
     return NextResponse.json(
       { error: error.message || "Failed to delete expense" },
       { status: 400 },
     );
   }
 }
-

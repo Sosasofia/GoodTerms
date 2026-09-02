@@ -2,11 +2,11 @@
 
 import { useEffect, useState, use } from "react";
 import { useUser } from "@clerk/nextjs";
-import { deleteExpense, getGroupTransactions } from "@/lib/api";
+import { deleteExpense, getGroupExpenses } from "@/lib/api";
 import { Dashboard, DashboardSkeleton } from "@/components/dashboard";
 import { useGroups } from "@/hooks/use-groups";
 import { getGroupViewerId } from "@/lib/identity";
-import { Group, Transaction } from "@/lib/types";
+import { Expense, Group } from "@/lib/types";
 
 export default function GroupPage({
   params,
@@ -21,14 +21,14 @@ export default function GroupPage({
   const viewerId = getGroupViewerId(activeGroup, user?.id);
   const [groupState, setGroupState] = useState<Group | null>(activeGroup ?? null);
 
-  const [items, setItems] = useState<Transaction[]>([]);
+  const [items, setItems] = useState<Expense[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [editingExpense, setEditingExpense] = useState<Transaction | null>(null);
+  const [editingExpense, setEditingExpense] = useState<Expense | null>(null);
   const [deletingExpenseId, setDeletingExpenseId] = useState<string | null>(null);
 
   useEffect(() => {
     if (groupId) {
-      getGroupTransactions(groupId)
+      getGroupExpenses(groupId)
         .then((data) => setItems(data || []))
         .finally(() => setIsLoading(false));
     }
@@ -48,27 +48,27 @@ export default function GroupPage({
 
   if (!activeGroup || !groupState) return null;
 
-  const refreshTransactions = () => {
+  const refreshExpenses = () => {
     setEditingExpense(null);
     setIsLoading(true);
-    getGroupTransactions(groupId)
+    getGroupExpenses(groupId)
       .then((data) => setItems(data || []))
       .finally(() => setIsLoading(false));
   };
 
-  const handleEditExpense = (item: Transaction) => {
+  const handleEditExpense = (item: Expense) => {
     if (item.type === "expense") {
       setEditingExpense(item);
     }
   };
 
-  const handleDeleteExpense = (transactionId: string) => {
+  const handleDeleteExpense = (expenseId: string) => {
     const selectedExpense = items.find(
-      (item) => item.type === "expense" && item.id === transactionId,
+      (item) => item.type === "expense" && item.id === expenseId,
     );
 
     if (!selectedExpense) return;
-    setDeletingExpenseId(transactionId);
+    setDeletingExpenseId(expenseId);
   };
 
   const confirmDeleteExpense = async () => {
@@ -77,7 +77,7 @@ export default function GroupPage({
     try {
       await deleteExpense(groupId, deletingExpenseId);
       setDeletingExpenseId(null);
-      refreshTransactions();
+      refreshExpenses();
     } catch (error: any) {
       alert(error.message || "Failed to delete expense.");
     }
@@ -95,7 +95,7 @@ export default function GroupPage({
         group={groupState}
         items={items}
         viewerId={viewerId}
-        onUpdate={refreshTransactions}
+        onUpdate={refreshExpenses}
         editingExpense={editingExpense}
         onEditExpense={handleEditExpense}
         onDeleteExpense={handleDeleteExpense}

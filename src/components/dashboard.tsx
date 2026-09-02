@@ -2,7 +2,7 @@
 
 import { useState, useMemo, useEffect } from "react";
 import { useUser } from "@clerk/nextjs";
-import { Group, Transaction } from "../lib/types";
+import { Expense, Group } from "../lib/types";
 import { ExpenseForm } from "./expense-form";
 import { HistoryList } from "./history-list";
 import { SettlementForm } from "./settlement-form";
@@ -10,13 +10,13 @@ import { calculateBalances, getOptimizedSettlements } from "@/services/balances"
 
 interface DashboardProps {
   group: Group;
-  items: Transaction[];
+  items: Expense[];
   viewerId: string;
   onUpdate: () => void;
   loading?: boolean;
-  editingExpense?: Transaction | null;
-  onEditExpense?: (item: Transaction) => void;
-  onDeleteExpense?: (transactionId: string) => void;
+  editingExpense?: Expense | null;
+  onEditExpense?: (item: Expense) => void;
+  onDeleteExpense?: (expenseId: string) => void;
   onCancelEdit?: () => void;
 }
 
@@ -95,11 +95,10 @@ export function Dashboard({
           return (
             <div
               key={u.id}
-              className={`p-2 rounded-lg text-center border transition-colors ${
-                isPositive
-                  ? "bg-green-50 border-green-200"
-                  : "bg-red-50 border-red-200"
-              }`}
+              className={`p-2 rounded-lg text-center border transition-colors ${isPositive
+                ? "bg-green-50 border-green-200"
+                : "bg-red-50 border-red-200"
+                }`}
             >
               <div className="font-bold text-sm truncate text-slate-700">
                 {u.name}
@@ -118,21 +117,19 @@ export function Dashboard({
       <div className="flex mb-4 bg-white rounded-lg p-1 shadow-sm border border-slate-200">
         <button
           onClick={() => setActiveTab("expense")}
-          className={`flex-1 py-2 rounded-md font-bold text-sm transition-all ${
-            activeTab === "expense"
-              ? "bg-blue-100 text-blue-700 shadow-sm"
-              : "text-slate-500 hover:bg-slate-50"
-          }`}
+          className={`flex-1 py-2 rounded-md font-bold text-sm transition-all ${activeTab === "expense"
+            ? "bg-blue-100 text-blue-700 shadow-sm"
+            : "text-slate-500 hover:bg-slate-50"
+            }`}
         >
           Add Expense
         </button>
         <button
           onClick={() => setActiveTab("settlement")}
-          className={`flex-1 py-2 rounded-md font-bold text-sm transition-all ${
-            activeTab === "settlement"
-              ? "bg-green-100 text-green-700 shadow-sm"
-              : "text-slate-500 hover:bg-slate-50"
-          }`}
+          className={`flex-1 py-2 rounded-md font-bold text-sm transition-all ${activeTab === "settlement"
+            ? "bg-green-100 text-green-700 shadow-sm"
+            : "text-slate-500 hover:bg-slate-50"
+            }`}
         >
           Settle Up
         </button>

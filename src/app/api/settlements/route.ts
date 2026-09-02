@@ -13,7 +13,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Invalid amount" }, { status: 400 });
     }
 
-    const settlement = await prisma.transaction.create({
+    const settlement = await prisma.expense.create({
       data: {
         amount: value,
         description: "Payment",
@@ -54,7 +54,7 @@ export async function GET(request: Request) {
   if (!groupId) return NextResponse.json([]);
 
   try {
-    const transactions = await prisma.transaction.findMany({
+    const expenses = await prisma.expense.findMany({
       where: { groupId: groupId },
       include: {
         payer: true,
@@ -67,7 +67,7 @@ export async function GET(request: Request) {
       orderBy: { date: "desc" },
     });
 
-    return NextResponse.json(transactions);
+    return NextResponse.json(expenses);
   } catch (error) {
     console.error("Fetch Error:", error);
     return NextResponse.json({ error: "Failed to fetch" }, { status: 500 });

@@ -1,5 +1,5 @@
 import { getOrCreateGuestId } from "./identity";
-import type { Group, Transaction } from "./types";
+import type { Expense, Group } from "./types";
 
 export interface ExpensePayload {
   description: string;
@@ -105,8 +105,8 @@ export const getGroups = () => {
   });
 };
 
-export const getGroupTransactions = (groupId: string) => {
-  return fetcher<Transaction[]>(`/api/groups/${groupId}/transactions`);
+export const getGroupExpenses = (groupId: string) => {
+  return fetcher<Expense[]>(`/api/groups/${groupId}/expenses`);
 };
 
 export const createGroup = (name: string, pin?: string) =>
@@ -143,7 +143,7 @@ export const removeGroupMember = (groupId: string, memberId: string) =>
   });
 
 export const createExpense = (groupId: string, data: ExpensePayload) => {
-  return fetcher<Transaction>(`/api/groups/${groupId}/transactions`, {
+  return fetcher<Expense>(`/api/groups/${groupId}/expenses`, {
     method: "POST",
     body: JSON.stringify(data),
   });
@@ -154,21 +154,21 @@ export const updateExpense = (
   transactionId: string,
   data: ExpensePayload,
 ) => {
-  return fetcher<Transaction>(`/api/groups/${groupId}/transactions`, {
+  return fetcher<Expense>(`/api/groups/${groupId}/expenses`, {
     method: "PUT",
     body: JSON.stringify({ transactionId, ...data }),
   });
 };
 
 export const deleteExpense = (groupId: string, transactionId: string) => {
-  return fetcher<{ success: true }>(`/api/groups/${groupId}/transactions`, {
+  return fetcher<{ success: true }>(`/api/groups/${groupId}/expenses`, {
     method: "DELETE",
     body: JSON.stringify({ transactionId }),
   });
 };
 
 export const createSettlement = (data: SettlementPayload) =>
-  fetcher<Transaction>("/api/settlements", {
+  fetcher<Expense>("/api/settlements", {
     method: "POST",
     body: JSON.stringify(data),
   });

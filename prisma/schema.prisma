@@ -16,33 +16,46 @@ model User {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  groups       Group[]  @relation("GroupMembers")
-  ownedGroups  Group[]  @relation("GroupOwner")
-
-  paidTransactions     Transaction[] @relation("Payer")
-  sentTransactions     Transaction[] @relation("Sender")
-  receivedTransactions Transaction[] @relation("Receiver")
-
-  splits               Split[]       @relation("Debtor")
+  ownedGroups Group[]  @relation("GroupOwner")
+  memberships Member[]
 }
 
 model Group {
-  id        String   @id @default(uuid())
-  name      String
-  code      String   @unique
-  pin       String?
-  isArchived Boolean @default(false)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id         String   @id @default(uuid())
+  name       String
+  code       String   @unique
+  pin        String?
+  isArchived Boolean  @default(false)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
 
-  ownerId    String?
-  owner      User?    @relation("GroupOwner", fields: [ownerId], references: [id])
+  ownerId String?
+  owner   User?   @relation("GroupOwner", fields: [ownerId], references: [id])
 
-  members      User[]        @relation("GroupMembers")
-  transactions Transaction[]
+  members  Member[]
+  expenses Expense[]
 }
 
-model Transaction {
+model Member {
+  id       String   @id @default(uuid())
+  name     String
+  joinedAt DateTime @default(now())
+
+  groupId String
+  group   Group  @relation(fields: [groupId], references: [id], onDelete: Cascade)
+
+  userId String?
+  user   User?   @relation(fields: [userId], references: [id])
+
+  paidExpenses     Expense[] @relation("Payer")
+  sentExpenses     Expense[] @relation("Sender")
+  receivedExpenses Expense[] @relation("Receiver")
+  splits           Split[]   @relation("Debtor")
+
+  @@unique([groupId, userId])
+}
+
+model Expense {
   id          String    @id @default(uuid())
   description String
   note        String?
@@ -51,28 +64,28 @@ model Transaction {
   dueDate     DateTime?
   type        String    @default("expense")
 
-  groupId     String
-  group       Group    @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  groupId String
+  group   Group  @relation(fields: [groupId], references: [id], onDelete: Cascade)
 
-  payerId     String?
-  payer       User?    @relation("Payer", fields: [payerId], references: [id])
+  payerId String?
+  payer   Member? @relation("Payer", fields: [payerId], references: [id])
 
-  senderId    String?
-  sender      User?    @relation("Sender", fields: [senderId], references: [id])
-  receiverId  String?
-  receiver    User?    @relation("Receiver", fields: [receiverId], references: [id])
+  senderId   String?
+  sender     Member? @relation("Sender", fields: [senderId], references: [id])
+  receiverId String?
+  receiver   Member? @relation("Receiver", fields: [receiverId], references: [id])
 
-  splits      Split[]
+  splits Split[]
 }
 
 model Split {
-  id            String      @id @default(uuid())
-  amount        Float
-  isPaid        Boolean     @default(false)
+  id     String  @id @default(uuid())
+  amount Float
+  isPaid Boolean @default(false)
 
-  transactionId String
-  transaction   Transaction @relation(fields: [transactionId], references: [id], onDelete: Cascade)
+  expenseId String
+  expense   Expense @relation(fields: [expenseId], references: [id], onDelete: Cascade)
 
-  debtorId      String
-  debtor        User        @relation("Debtor", fields: [debtorId], references: [id])
+  debtorId String
+  debtor   Member @relation("Debtor", fields: [debtorId], references: [id])
 }

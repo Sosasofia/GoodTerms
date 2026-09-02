@@ -1,11 +1,11 @@
-import { Group, Transaction } from "../lib/types";
+import { Expense, Group } from "../lib/types";
 import { LoadingSpinner } from "./loading-spinner";
 import { useExpenseForm } from "@/hooks/use-expense-form";
 
 interface ExpenseFormProps {
   group: Group;
   onSuccess: () => void;
-  initialExpense?: Transaction | null;
+  initialExpense?: Expense | null;
   onCancel?: () => void;
 }
 
@@ -37,11 +37,10 @@ export function ExpenseForm({
 
   return (
     <div
-      className={`bg-white p-6 rounded-xl shadow-lg border-t-4 transition-all duration-200 ${
-        isEditing
+      className={`bg-white p-6 rounded-xl shadow-lg border-t-4 transition-all duration-200 ${isEditing
           ? "border-blue-500 ring-2 ring-blue-200 shadow-blue-100"
           : "border-blue-500"
-      }`}
+        }`}
     >
       <form onSubmit={handleSubmit} className="space-y-4">
         {errorMessage && (
@@ -93,11 +92,10 @@ export function ExpenseForm({
         />
 
         <div
-          className={`rounded-xl border p-3 transition-all ${
-            dueDate
+          className={`rounded-xl border p-3 transition-all ${dueDate
               ? "border-amber-300 bg-amber-50 shadow-sm"
               : "border-slate-200 bg-slate-50"
-          }`}
+            }`}
         >
           <label className="mb-1 block text-xs font-bold uppercase tracking-wide text-slate-500">
             Due date (optional)

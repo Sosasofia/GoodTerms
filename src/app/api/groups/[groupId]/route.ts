@@ -10,7 +10,7 @@ export async function GET(
     const { groupId } = await params;
     const group = await prisma.group.findUnique({
       where: { id: groupId },
-      include: { owner: true, members: true },
+      include: { owner: true, members: { include: { user: true } } },
     });
 
     if (!group) {
@@ -38,7 +38,7 @@ export async function PATCH(
 
     const group = await prisma.group.findUnique({
       where: { id: groupId },
-      include: { owner: true, members: true },
+      include: { owner: true, members: { include: { user: true } } },
     });
 
     if (!group) {
@@ -62,7 +62,9 @@ export async function PATCH(
         );
       }
 
-      const targetMember = group.members.find((member) => member.id === targetMemberId);
+      const targetMember = group.members.find(
+        (member) => member.id === targetMemberId,
+      );
       if (!targetMember) {
         return NextResponse.json(
           { error: "Selected member is not in this group." },
@@ -70,12 +72,22 @@ export async function PATCH(
         );
       }
 
+      if (!targetMember.userId) {
+        return NextResponse.json(
+          {
+            error:
+              "Cannot transfer ownership to a placeholder member. They must join the app first.",
+          },
+          { status: 400 },
+        );
+      }
+
       const updated = await prisma.group.update({
         where: { id: groupId },
         data: {
-          ownerId: targetMember.id,
+          ownerId: targetMember.userId,
         },
-        include: { owner: true, members: true },
+        include: { owner: true, members: { include: { user: true } } },
       });
 
       return NextResponse.json(updated);
@@ -92,9 +104,11 @@ export async function PATCH(
       where: { id: groupId },
       data: {
         ...(nextPin !== undefined ? { pin: nextPin } : {}),
-        ...(body.isArchived !== undefined ? { isArchived: Boolean(body.isArchived) } : {}),
+        ...(body.isArchived !== undefined
+          ? { isArchived: Boolean(body.isArchived) }
+          : {}),
       },
-      include: { owner: true, members: true },
+      include: { owner: true, members: { include: { user: true } } },
     });
 
     return NextResponse.json(updated);
@@ -119,7 +133,7 @@ export async function DELETE(
 
     const group = await prisma.group.findUnique({
       where: { id: groupId },
-      include: { owner: true, members: true },
+      include: { owner: true, members: { include: { user: true } } },
     });
 
     if (!group) {
@@ -128,8 +142,8 @@ export async function DELETE(
 
     if (body.action === "leave") {
       const member =
-        (userId && group.members.find((m) => m.clerkId === userId)) ||
-        (guestId && group.members.find((m) => m.guestId === guestId));
+        (userId && group.members.find((m) => m.user?.clerkId === userId)) ||
+        (guestId && group.members.find((m) => m.user?.guestId === guestId));
 
       if (!member) {
         return NextResponse.json(
@@ -138,9 +152,12 @@ export async function DELETE(
         );
       }
 
-      if (group.ownerId === member.id) {
+      if (group.ownerId === member.userId) {
         return NextResponse.json(
-          { error: "The group owner cannot leave the group. Transfer ownership or archive it first." },
+          {
+            error:
+              "The group owner cannot leave the group. Transfer ownership or archive it first.",
+          },
           { status: 400 },
         );
       }
@@ -149,10 +166,10 @@ export async function DELETE(
         where: { id: groupId },
         data: {
           members: {
-            disconnect: { id: member.id },
+            delete: { id: member.id },
           },
         },
-        include: { owner: true, members: true },
+        include: { owner: true, members: { include: { user: true } } },
       });
 
       return NextResponse.json(updated);
@@ -182,7 +199,7 @@ export async function DELETE(
         );
       }
 
-      if (targetMember.id === group.ownerId) {
+      if (targetMember.userId === group.ownerId) {
         return NextResponse.json(
           { error: "The group owner cannot be removed." },
           { status: 400 },
@@ -193,10 +210,10 @@ export async function DELETE(
         where: { id: groupId },
         data: {
           members: {
-            disconnect: { id: targetMember.id },
+            delete: { id: targetMember.id },
           },
         },
-        include: { owner: true, members: true },
+        include: { owner: true, members: { include: { user: true } } },
       });
 
       return NextResponse.json(updated);

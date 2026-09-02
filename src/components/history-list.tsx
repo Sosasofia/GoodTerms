@@ -1,9 +1,11 @@
-import { Transaction } from "../lib/types";
+import { Expense, Settlement } from "../lib/types";
+
+type HistoryItem = Expense | Settlement;
 
 interface HistoryListProps {
-  items: Transaction[];
-  onEditExpense?: (item: Transaction) => void;
-  onDeleteExpense?: (transactionId: string) => void;
+  items: HistoryItem[];
+  onEditExpense?: (item: Expense) => void;
+  onDeleteExpense?: (expenseId: string) => void;
 }
 
 export function HistoryList({
@@ -44,9 +46,8 @@ export function HistoryList({
       {sortedItems.map((item) => (
         <div
           key={`${item.type}-${item.id}`}
-          className={`p-4 rounded-xl shadow-sm border-l-4 bg-white ${
-            item.type === "expense" ? "border-blue-400" : "border-green-400"
-          }`}
+          className={`p-4 rounded-xl shadow-sm border-l-4 bg-white ${item.type === "expense" ? "border-blue-400" : "border-green-400"
+            }`}
         >
           {item.type === "expense" ? (
             <div className="flex justify-between items-start gap-3">
@@ -75,11 +76,10 @@ export function HistoryList({
                     .map((s: any) => (
                       <div
                         key={s.id}
-                        className={`text-xs ${
-                          s.isPaid
-                            ? "text-green-600 line-through"
-                            : "text-red-500"
-                        }`}
+                        className={`text-xs ${s.isPaid
+                          ? "text-green-600 line-through"
+                          : "text-red-500"
+                          }`}
                       >
                         {s.debtor.name} {s.isPaid ? "paid" : "owes"} $
                         {s.amount.toFixed(0)}
