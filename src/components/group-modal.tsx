@@ -19,7 +19,7 @@ export function GroupModal({ mode, onClose, onSuccess }: GroupModalProps) {
   const [name, setName] = useState("");
   const [code, setCode] = useState("");
   const [pin, setPin] = useState("");
-  const [guestName, setGuestName] = useState("");
+  const [memberName, setmemberName] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [conflictError, setConflictError] = useState(false);
@@ -29,7 +29,7 @@ export function GroupModal({ mode, onClose, onSuccess }: GroupModalProps) {
   useEffect(() => {
     if (isLoaded && !user) {
       const savedName = localStorage.getItem("guest_name");
-      if (savedName) setGuestName(savedName);
+      if (savedName) setmemberName(savedName);
     }
   }, [isLoaded, user]);
 
@@ -68,20 +68,20 @@ export function GroupModal({ mode, onClose, onSuccess }: GroupModalProps) {
       }
 
       if (!user) {
-        if (!guestName.trim()) {
+        if (!memberName.trim()) {
           setError("Please enter your name.");
           setLoading(false);
           return;
         }
 
-        localStorage.setItem("guest_name", guestName);
+        localStorage.setItem("guest_name", memberName);
 
         const payload: JoinGroupPayload = {
           code,
           pin,
           action: forceAction || "join",
-          guestName,
-          guestId: getOrCreateGuestId(),
+          memberName,
+          //guestId: getOrCreateGuestId(),
         };
 
         const joinedGroup = await joinGroup(payload);
@@ -191,7 +191,7 @@ export function GroupModal({ mode, onClose, onSuccess }: GroupModalProps) {
                   Is this you?
                 </h3>
                 <p className="text-sm text-yellow-700 mb-4">
-                  The name <strong>&quot;{guestName}&quot;</strong> is already in
+                  The name <strong>&quot;{memberName}&quot;</strong> is already in
                   this group. Do you want to log in as this user?
                 </p>
                 <div className="flex gap-2">
@@ -204,7 +204,7 @@ export function GroupModal({ mode, onClose, onSuccess }: GroupModalProps) {
                   <button
                     onClick={() => {
                       setConflictError(false);
-                      setGuestName("");
+                      setmemberName("");
                     }}
                     className="flex-1 bg-white border border-slate-300 text-slate-700 py-2 rounded font-bold hover:bg-slate-50 transition-colors"
                   >
@@ -290,8 +290,8 @@ export function GroupModal({ mode, onClose, onSuccess }: GroupModalProps) {
                       <input
                         className="w-full border p-2 rounded focus:ring-2 focus:ring-yellow-500 outline-none"
                         placeholder="Your Nickname"
-                        value={guestName}
-                        onChange={(e) => setGuestName(e.target.value)}
+                        value={memberName}
+                        onChange={(e) => setmemberName(e.target.value)}
                       />
                       <p className="text-[10px] text-yellow-600 mt-1">
                         You are joining as a guest. We&apos;ll remember you on this
@@ -311,13 +311,12 @@ export function GroupModal({ mode, onClose, onSuccess }: GroupModalProps) {
                     <button
                       type="submit"
                       disabled={loading}
-                      className={`flex-1 py-2 rounded text-white font-bold transition-colors ${
-                        loading
-                          ? "bg-slate-400 cursor-not-allowed"
-                          : mode === "create"
-                            ? "bg-blue-600 hover:bg-blue-700"
-                            : "bg-green-600 hover:bg-green-700"
-                      }`}
+                      className={`flex-1 py-2 rounded text-white font-bold transition-colors ${loading
+                        ? "bg-slate-400 cursor-not-allowed"
+                        : mode === "create"
+                          ? "bg-blue-600 hover:bg-blue-700"
+                          : "bg-green-600 hover:bg-green-700"
+                        }`}
                     >
                       {loading
                         ? "Processing..."

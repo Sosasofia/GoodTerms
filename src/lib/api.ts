@@ -21,8 +21,7 @@ export interface SettlementPayload {
 export interface JoinGroupPayload {
   code: string;
   pin?: string;
-  guestName?: string;
-  guestId?: string;
+  memberName: string;
   action?: "join" | "claim";
 }
 

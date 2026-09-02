@@ -19,7 +19,7 @@ export function useDemoGroup(groups: any[], refreshGroups: () => Promise<void>) 
     try {
       if (user) {
         try {
-          await joinGroup({ code: "BALI-2025" });
+          await joinGroup({ code: "BALI-2025", memberName: user.firstName || "Demo User" });
         } catch (error: any) {
           if (error.message?.includes("Group not found")) {
             throw error;
@@ -27,19 +27,19 @@ export function useDemoGroup(groups: any[], refreshGroups: () => Promise<void>) 
         }
       } else {
         const guestId = getOrCreateGuestId();
-        const guestName = localStorage.getItem("guest_name") || "Demo User";
-        localStorage.setItem("guest_name", guestName);
+        const memberName = localStorage.getItem("guest_name") || "Demo User";
+        localStorage.setItem("guest_name", memberName);
 
         try {
           await joinGroup(
             {
               code: "BALI-2025",
-              guestId,
-              guestName,
+              //guestId: getOrCreateGuestId(),
+              memberName,
               action: "claim",
             },
           );
-        } catch (error: any) {}
+        } catch (error: any) { }
       }
 
       await refreshGroups();
