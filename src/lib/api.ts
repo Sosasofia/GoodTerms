@@ -15,6 +15,7 @@ export interface SettlementPayload {
   senderId: string;
   receiverId: string;
   splitId?: string;
+  splitIds?: string[];
   amount: number;
 }
 

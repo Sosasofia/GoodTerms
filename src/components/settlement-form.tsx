@@ -4,8 +4,8 @@ import { useMemo } from "react";
 import { Group, Transaction } from "../lib/types";
 import { useSettlementForm } from "@/hooks/use-settlement-form";
 import {
-  SettlementSuggestion,
   getUserSettlementSuggestions,
+  SettlementSuggestion,
 } from "@/services/balances";
 
 interface SettlementFormProps {
@@ -13,7 +13,6 @@ interface SettlementFormProps {
   items: Transaction[];
   viewerId: string;
   onSuccess: () => void;
-  settlementSuggestions?: SettlementSuggestion[];
 }
 
 export function SettlementForm({
@@ -21,7 +20,6 @@ export function SettlementForm({
   items,
   viewerId,
   onSuccess,
-  settlementSuggestions = [],
 }: SettlementFormProps) {
   const {
     senderId,
@@ -113,6 +111,7 @@ export function SettlementForm({
                             expenseDescription: `Suggested settlement: ${fromMember.name} → ${toMember.name}`,
                             receiverName: toMember.name,
                             receiverId: suggestion.toUserId,
+                            splitIds: suggestion.splitIds,
                           })
                         }
                         className="bg-green-600 hover:bg-green-700 disabled:bg-slate-300 text-white px-3 py-1 rounded-lg text-sm font-bold cursor-pointer transition-colors min-w-25 flex justify-center"

@@ -4,6 +4,7 @@ export interface SettlementSuggestion {
   fromUserId: string;
   toUserId: string;
   amount: number;
+  splitIds?: string[];
   dueDate?: string | null;
 }
 
@@ -103,7 +104,7 @@ export function getUserSettlementSuggestions(
 ): SettlementSuggestion[] {
   const entries = new Map<
     string,
-    { amount: number; dueDate: string | null }
+    { amount: number; dueDate: string | null; splitIds: string[] }
   >();
 
   for (const item of items || []) {
@@ -115,8 +116,13 @@ export function getUserSettlementSuggestions(
     for (const split of item.splits || []) {
       if (split.debtor.id !== payerId || split.isPaid) continue;
 
-      const current = entries.get(item.payer.id) || { amount: 0, dueDate: null };
+      const current = entries.get(item.payer.id) || {
+        amount: 0,
+        dueDate: null,
+        splitIds: [],
+      };
       current.amount += split.amount;
+      current.splitIds.push(split.id);
 
       if (
         pendingDueDate &&
@@ -134,6 +140,7 @@ export function getUserSettlementSuggestions(
       fromUserId: payerId,
       toUserId: receiverId,
       amount: Number(details.amount.toFixed(2)),
+      splitIds: details.splitIds,
       ...(details.dueDate ? { dueDate: details.dueDate } : {}),
     }))
     .sort((a, b) => {

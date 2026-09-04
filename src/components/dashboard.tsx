@@ -6,7 +6,7 @@ import { Expense, Group } from "../lib/types";
 import { ExpenseForm } from "./expense-form";
 import { HistoryList } from "./history-list";
 import { SettlementForm } from "./settlement-form";
-import { calculateBalances, getOptimizedSettlements } from "@/services/balances";
+import { calculateBalances } from "@/services/balances";
 
 interface DashboardProps {
   group: Group;
@@ -48,10 +48,6 @@ export function Dashboard({
   }, [editingExpense]);
 
   const balances = useMemo(() => calculateBalances(groupState, items), [items, groupState]);
-  const settlementSuggestions = useMemo(
-    () => getOptimizedSettlements(groupState, items),
-    [groupState, items],
-  );
   const isGroupOwner = Boolean(
     user?.id && groupState.owner?.clerkId === user.id,
   );
@@ -149,7 +145,6 @@ export function Dashboard({
             items={items}
             viewerId={viewerId}
             onSuccess={onUpdate}
-            settlementSuggestions={settlementSuggestions}
           />
         )}
       </div>

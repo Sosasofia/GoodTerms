@@ -9,6 +9,7 @@ export interface UnpaidDebt {
   receiverName: string;
   receiverId: string;
   isPaid?: boolean;
+  splitIds?: string[];
 }
 
 export function useSettlementForm(
@@ -62,6 +63,7 @@ export function useSettlementForm(
         senderId,
         receiverId: selectedDebt.receiverId,
         splitId: selectedDebt.id, 
+        splitIds: selectedDebt.splitIds,
         groupId: group.id,
       });
 

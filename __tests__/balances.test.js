@@ -135,8 +135,8 @@ describe('settlement optimization', () => {
     ];
 
     expect(getUserSettlementSuggestions(group, items, 'carol')).toEqual([
-      { fromUserId: 'carol', toUserId: 'alice', amount: 75 },
-      { fromUserId: 'carol', toUserId: 'bob', amount: 60 },
+      { fromUserId: 'carol', toUserId: 'alice', amount: 75, splitIds: ['split-1'] },
+      { fromUserId: 'carol', toUserId: 'bob', amount: 60, splitIds: ['split-3'] },
     ]);
   });
 
@@ -180,8 +180,20 @@ describe('settlement optimization', () => {
     ];
 
     expect(getUserSettlementSuggestions(group, items, 'carol')).toEqual([
-      { fromUserId: 'carol', toUserId: 'bob', amount: 60, dueDate: '2026-09-01T00:00:00.000Z' },
-      { fromUserId: 'carol', toUserId: 'alice', amount: 75, dueDate: '2026-09-10T00:00:00.000Z' },
+      {
+        fromUserId: 'carol',
+        toUserId: 'bob',
+        amount: 60,
+        splitIds: ['split-12'],
+        dueDate: '2026-09-01T00:00:00.000Z',
+      },
+      {
+        fromUserId: 'carol',
+        toUserId: 'alice',
+        amount: 75,
+        splitIds: ['split-10'],
+        dueDate: '2026-09-10T00:00:00.000Z',
+      },
     ]);
   });
 });
