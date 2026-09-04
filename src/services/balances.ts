@@ -5,7 +5,19 @@ export interface SettlementSuggestion {
   toUserId: string;
   amount: number;
   splitIds?: string[];
+  offsetSplitIds?: string[];
   dueDate?: string | null;
+}
+
+export type SettlementSuggestionMode = "total" | "dueDate" | "settleAll";
+
+interface OutstandingDebt {
+  fromUserId: string;
+  toUserId: string;
+  amount: number;
+  splitIds: string[];
+  offsetSplitIds?: string[];
+  dueDate: string | null;
 }
 
 export function calculateBalances(group: Group, items: Transaction[]) {
@@ -101,56 +113,121 @@ export function getUserSettlementSuggestions(
   group: Group,
   items: Transaction[],
   payerId: string,
+  mode: SettlementSuggestionMode = "total",
 ): SettlementSuggestion[] {
-  const entries = new Map<
-    string,
-    { amount: number; dueDate: string | null; splitIds: string[] }
-  >();
+  const outgoing = getOutstandingDebts(items, payerId);
 
-  for (const item of items || []) {
-    if (item.type !== "expense") continue;
-    if (!item.payer || item.payer.id === payerId) continue;
+  if (mode === "dueDate") {
+    return outgoing.sort(compareDueDates).map(toSuggestion);
+  }
 
-    const pendingDueDate = item.dueDate ? new Date(item.dueDate) : null;
+  const totals = new Map<string, OutstandingDebt>();
+  for (const debt of outgoing) {
+    const current = totals.get(debt.toUserId) || {
+      fromUserId: payerId,
+      toUserId: debt.toUserId,
+      amount: 0,
+      splitIds: [],
+      dueDate: null,
+    };
+    current.amount += debt.amount;
+    current.splitIds.push(...debt.splitIds);
+    if (
+      debt.dueDate &&
+      (!current.dueDate ||
+        new Date(debt.dueDate).getTime() < new Date(current.dueDate).getTime())
+    ) {
+      current.dueDate = debt.dueDate;
+    }
+    totals.set(debt.toUserId, current);
+  }
+
+  const totalSuggestions = [...totals.values()];
+
+  if (mode === "settleAll") {
+    return totalSuggestions
+      .map((suggestion) => {
+        const reverseDebts = getOutstandingDebts(
+          items,
+          suggestion.toUserId,
+        ).filter((debt) => debt.toUserId === payerId);
+
+        const reverseTotal = reverseDebts.reduce(
+          (sum, debt) => sum + debt.amount,
+          0,
+        );
+
+        return {
+          ...suggestion,
+          amount: Number((suggestion.amount - reverseTotal).toFixed(2)),
+          splitIds: suggestion.splitIds,
+          offsetSplitIds: reverseDebts.flatMap((debt) => debt.splitIds),
+        };
+      })
+      .filter((suggestion) => suggestion.amount > 0.01)
+      .map(toSuggestion);
+  }
+
+  return totalSuggestions.map(toSuggestion);
+}
+
+function getOutstandingDebts(
+  items: Transaction[],
+  fromUserId: string,
+): OutstandingDebt[] {
+  const debts: OutstandingDebt[] = [];
+  for (const item of items) {
+    if (item.type !== "expense" || !item.payer) continue;
+    if (item.payer.id === fromUserId) continue;
 
     for (const split of item.splits || []) {
-      if (split.debtor.id !== payerId || split.isPaid) continue;
-
-      const current = entries.get(item.payer.id) || {
-        amount: 0,
-        dueDate: null,
-        splitIds: [],
-      };
-      current.amount += split.amount;
-      current.splitIds.push(split.id);
-
-      if (
-        pendingDueDate &&
-        (!current.dueDate || pendingDueDate.getTime() < new Date(current.dueDate).getTime())
-      ) {
-        current.dueDate = pendingDueDate.toISOString();
-      }
-
-      entries.set(item.payer.id, current);
+      if (split.debtor.id !== fromUserId || split.isPaid) continue;
+      debts.push({
+        fromUserId,
+        toUserId: item.payer.id,
+        amount: split.amount,
+        splitIds: [split.id],
+        dueDate: item.dueDate ? new Date(item.dueDate).toISOString() : null,
+      });
     }
   }
 
-  return [...entries.entries()]
-    .map(([receiverId, details]) => ({
-      fromUserId: payerId,
-      toUserId: receiverId,
-      amount: Number(details.amount.toFixed(2)),
-      splitIds: details.splitIds,
-      ...(details.dueDate ? { dueDate: details.dueDate } : {}),
-    }))
-    .sort((a, b) => {
-      const dueA = a.dueDate ? new Date(a.dueDate).getTime() : Number.POSITIVE_INFINITY;
-      const dueB = b.dueDate ? new Date(b.dueDate).getTime() : Number.POSITIVE_INFINITY;
+  const payments = new Map<string, number>();
+  for (const item of items) {
+    if (item.type !== "settlement") continue;
+    const key = `${item.sender.id}:${item.receiver.id}`;
+    payments.set(key, (payments.get(key) || 0) + item.amount);
+  }
 
-      if (dueA !== dueB) {
-        return dueA - dueB;
-      }
+  for (const debt of debts.sort(compareDueDates)) {
+    const key = `${debt.fromUserId}:${debt.toUserId}`;
+    const payment = Math.min(debt.amount, payments.get(key) || 0);
+    debt.amount -= payment;
+    payments.set(key, Math.max(0, (payments.get(key) || 0) - payment));
+  }
 
-      return b.amount - a.amount;
-    });
+  return debts.filter((debt) => debt.amount > 0.01);
+}
+
+function compareDueDates(a: OutstandingDebt, b: OutstandingDebt) {
+  const dueA = a.dueDate
+    ? new Date(a.dueDate).getTime()
+    : Number.POSITIVE_INFINITY;
+  const dueB = b.dueDate
+    ? new Date(b.dueDate).getTime()
+    : Number.POSITIVE_INFINITY;
+  return dueA - dueB;
+}
+
+function toSuggestion(debt: OutstandingDebt): SettlementSuggestion {
+  return {
+    fromUserId: debt.fromUserId,
+    toUserId: debt.toUserId,
+    amount: Number(debt.amount.toFixed(2)),
+    splitIds: debt.splitIds,
+    ...(debt.offsetSplitIds?.length
+      ? { offsetSplitIds: debt.offsetSplitIds }
+      : {}),
+    ...(debt.dueDate ? { dueDate: debt.dueDate } : {}),
+  };
 }

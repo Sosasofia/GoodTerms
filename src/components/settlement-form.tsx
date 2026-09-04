@@ -1,11 +1,12 @@
 "use client";
 
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { Group, Transaction } from "../lib/types";
 import { useSettlementForm } from "@/hooks/use-settlement-form";
 import {
   getUserSettlementSuggestions,
   SettlementSuggestion,
+  SettlementSuggestionMode,
 } from "@/services/balances";
 
 interface SettlementFormProps {
@@ -32,16 +33,23 @@ export function SettlementForm({
     handleInitiatePayment,
     handleConfirmPayment,
   } = useSettlementForm(group, items, viewerId, onSuccess);
+  const [suggestionMode, setSuggestionMode] =
+    useState<SettlementSuggestionMode>("total");
 
   const memberMap = new Map(group.members.map((member) => [member.id, member]));
 
   const actualDebtsByReceiver: SettlementSuggestion[] = useMemo(
-    () => getUserSettlementSuggestions(group, items, senderId),
-    [group, items, senderId],
+    () => getUserSettlementSuggestions(group, items, senderId, suggestionMode),
+    [group, items, senderId, suggestionMode],
   );
 
   const visibleSuggestions = actualDebtsByReceiver;
   const currentPayer = memberMap.get(senderId);
+  const suggestionModeLabel = {
+    total: "Total owed by person",
+    dueDate: "Earliest due debts",
+    settleAll: "Net amount after reciprocal debts",
+  }[suggestionMode];
 
   return (
     <>
@@ -70,9 +78,36 @@ export function SettlementForm({
           </select>
         </div>
 
+        <div className="mb-4">
+          <div className="grid grid-cols-3 gap-1 rounded-lg bg-slate-100 p-1">
+            {([
+              ["total", "Total"],
+              ["dueDate", "Due dates first"],
+              ["settleAll", "Settle all"],
+            ] as const).map(([mode, label]) => (
+              <button
+                key={mode}
+                type="button"
+                onClick={() => setSuggestionMode(mode)}
+                className={`rounded-md px-2 py-2 text-xs font-bold transition-colors ${suggestionMode === mode
+                  ? "bg-white text-green-700 shadow-sm"
+                  : "text-slate-500 hover:text-slate-700"
+                  }`}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
+        </div>
+
         {visibleSuggestions.length > 0 && (
           <div className="mb-6">
-            <h3 className="font-bold text-slate-700 mb-2">Suggested Settlements</h3>
+            <div className="mb-2 flex items-baseline justify-between gap-2">
+              <h3 className="font-bold text-slate-700">Suggested Settlements</h3>
+              <span className="text-[10px] font-bold uppercase tracking-wide text-green-700">
+                {suggestionModeLabel}
+              </span>
+            </div>
             <div className="space-y-3">
               {visibleSuggestions.map((suggestion) => {
                 const fromMember = memberMap.get(suggestion.fromUserId);
@@ -82,7 +117,7 @@ export function SettlementForm({
 
                 return (
                   <div
-                    key={`${suggestion.fromUserId}-${suggestion.toUserId}-${suggestion.amount}`}
+                    key={`${suggestionMode}-${suggestion.fromUserId}-${suggestion.toUserId}-${suggestion.amount}-${suggestion.splitIds?.join("-")}`}
                     className="flex justify-between items-center border border-green-200 bg-green-50 p-3 rounded-lg"
                   >
                     <div>
@@ -112,6 +147,7 @@ export function SettlementForm({
                             receiverName: toMember.name,
                             receiverId: suggestion.toUserId,
                             splitIds: suggestion.splitIds,
+                            offsetSplitIds: suggestion.offsetSplitIds,
                           })
                         }
                         className="bg-green-600 hover:bg-green-700 disabled:bg-slate-300 text-white px-3 py-1 rounded-lg text-sm font-bold cursor-pointer transition-colors min-w-25 flex justify-center"
@@ -130,7 +166,9 @@ export function SettlementForm({
           <div className="mb-6">
             <h3 className="font-bold text-slate-700 mb-2">Suggested Settlements</h3>
             <p className="text-sm text-slate-500">
-              No outgoing payment suggestions for {currentPayer.name} right now.
+              No outgoing payment suggestions for {currentPayer.name} in{" "}
+              <span className="font-semibold">{suggestionModeLabel.toLowerCase()}</span>{" "}
+              right now.
             </p>
           </div>
         )}

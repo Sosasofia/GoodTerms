@@ -97,6 +97,101 @@ describe('settlement optimization', () => {
     ]);
   });
 
+  it('applies settlement payments in the balance calculation', () => {
+    const sofia = { id: 'sofia', name: 'Sofia', clerkId: 'c1' };
+    const alice = { id: 'alice', name: 'Alice', clerkId: 'c2' };
+    const group = {
+      id: 'group-payment',
+      name: 'Payments',
+      code: 'PAY-1234',
+      members: [sofia, alice],
+    };
+    const items = [
+      {
+        id: 'expense-payment',
+        type: 'expense',
+        description: 'Dinner',
+        amount: 50,
+        payer: alice,
+        splits: [
+          { id: 'split-payment', debtor: sofia, amount: 50, isPaid: false },
+        ],
+      },
+      {
+        id: 'settlement-payment',
+        type: 'settlement',
+        amount: 20,
+        sender: sofia,
+        receiver: alice,
+      },
+    ];
+
+    expect(calculateBalances(group, items)).toMatchObject({
+      sofia: -30,
+      alice: 30,
+    });
+
+    expect(getUserSettlementSuggestions(group, items, 'sofia')).toEqual([
+      {
+        fromUserId: 'sofia',
+        toUserId: 'alice',
+        amount: 30,
+        splitIds: ['split-payment'],
+      },
+    ]);
+  });
+
+  it('keeps direct unpaid debts available when another expense reverses the balance', () => {
+    const sofia = { id: 'sofia', name: 'Sofia', clerkId: 'c1' };
+    const alice = { id: 'alice', name: 'Alice', clerkId: 'c2' };
+    const group = {
+      id: 'group-reverse',
+      name: 'Reverse debts',
+      code: 'REV-1234',
+      members: [sofia, alice],
+    };
+    const items = [
+      {
+        id: 'expense-alice',
+        type: 'expense',
+        description: 'Alice expense',
+        amount: 50,
+        payer: alice,
+        splits: [
+          { id: 'split-alice', debtor: sofia, amount: 25, isPaid: false },
+        ],
+      },
+      {
+        id: 'expense-sofia',
+        type: 'expense',
+        description: 'Sofia expense',
+        amount: 20,
+        payer: sofia,
+        splits: [
+          { id: 'split-sofia', debtor: alice, amount: 10, isPaid: false },
+        ],
+      },
+    ];
+
+    expect(getUserSettlementSuggestions(group, items, 'sofia')).toEqual([
+      {
+        fromUserId: 'sofia',
+        toUserId: 'alice',
+        amount: 25,
+        splitIds: ['split-alice'],
+      },
+    ]);
+    expect(getUserSettlementSuggestions(group, items, 'sofia', 'settleAll')).toEqual([
+      {
+        fromUserId: 'sofia',
+        toUserId: 'alice',
+        amount: 15,
+        splitIds: ['split-alice'],
+        offsetSplitIds: ['split-sofia'],
+      },
+    ]);
+  });
+
   it('returns only the balances the selected payer owes to other members', () => {
     const alice = { id: 'alice', name: 'Alice', clerkId: 'c1' };
     const bob = { id: 'bob', name: 'Bob', clerkId: 'c2' };
@@ -193,6 +288,79 @@ describe('settlement optimization', () => {
         amount: 75,
         splitIds: ['split-10'],
         dueDate: '2026-09-10T00:00:00.000Z',
+      },
+    ]);
+  });
+
+  it('supports due-date-first and net settle-all suggestions', () => {
+    const sofia = { id: 'sofia', name: 'Sofia', clerkId: 'c1' };
+    const alice = { id: 'alice', name: 'Alice', clerkId: 'c2' };
+    const group = {
+      id: 'group-5',
+      name: 'Netting Trip',
+      code: 'NET-2025',
+      members: [sofia, alice],
+    };
+    const items = [
+      {
+        id: 'expense-8',
+        type: 'expense',
+        description: 'Hotel',
+        amount: 50,
+        dueDate: '2026-09-10T00:00:00.000Z',
+        payer: sofia,
+        splits: [
+          { id: 'split-14', debtor: alice, amount: 50, isPaid: false },
+        ],
+      },
+      {
+        id: 'expense-10',
+        type: 'expense',
+        description: 'Breakfast',
+        amount: 20,
+        dueDate: '2026-09-05T00:00:00.000Z',
+        payer: sofia,
+        splits: [
+          { id: 'split-16', debtor: alice, amount: 20, isPaid: false },
+        ],
+      },
+      {
+        id: 'expense-9',
+        type: 'expense',
+        description: 'Taxi',
+        amount: 10,
+        dueDate: '2026-09-01T00:00:00.000Z',
+        payer: alice,
+        splits: [
+          { id: 'split-15', debtor: sofia, amount: 10, isPaid: false },
+        ],
+      },
+    ];
+
+    expect(getUserSettlementSuggestions(group, items, 'alice', 'dueDate')).toEqual([
+      {
+        fromUserId: 'alice',
+        toUserId: 'sofia',
+        amount: 20,
+        splitIds: ['split-16'],
+        dueDate: '2026-09-05T00:00:00.000Z',
+      },
+      {
+        fromUserId: 'alice',
+        toUserId: 'sofia',
+        amount: 50,
+        splitIds: ['split-14'],
+        dueDate: '2026-09-10T00:00:00.000Z',
+      },
+    ]);
+    expect(getUserSettlementSuggestions(group, items, 'alice', 'settleAll')).toEqual([
+      {
+        fromUserId: 'alice',
+        toUserId: 'sofia',
+        amount: 60,
+        splitIds: ['split-16', 'split-14'],
+        offsetSplitIds: ['split-15'],
+        dueDate: '2026-09-05T00:00:00.000Z',
       },
     ]);
   });

@@ -22,19 +22,6 @@ export function HistoryList({
   }
 
   const sortedItems = [...items].sort((a, b) => {
-    const dateA =
-      a.type === "expense" && a.dueDate
-        ? new Date(a.dueDate).getTime()
-        : Number.POSITIVE_INFINITY;
-    const dateB =
-      b.type === "expense" && b.dueDate
-        ? new Date(b.dueDate).getTime()
-        : Number.POSITIVE_INFINITY;
-
-    if (dateA !== dateB) {
-      return dateA - dateB;
-    }
-
     const timestampA = new Date((a as any).date ?? (a as any).createdAt ?? 0).getTime();
     const timestampB = new Date((b as any).date ?? (b as any).createdAt ?? 0).getTime();
     return timestampB - timestampA;

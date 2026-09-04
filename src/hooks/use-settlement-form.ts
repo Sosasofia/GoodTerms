@@ -10,15 +10,18 @@ export interface UnpaidDebt {
   receiverId: string;
   isPaid?: boolean;
   splitIds?: string[];
+  offsetSplitIds?: string[];
 }
 
 export function useSettlementForm(
   group: Group,
   items: Transaction[],
   viewerId: string,
-  onSuccess: () => void
+  onSuccess: () => void,
 ) {
-  const [senderId, setSenderId] = useState(viewerId || group.members[0]?.id || "");
+  const [senderId, setSenderId] = useState(
+    viewerId || group.members[0]?.id || "",
+  );
   const [selectedDebt, setSelectedDebt] = useState<UnpaidDebt | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -38,6 +41,8 @@ export function useSettlementForm(
             expenseDescription: item.description,
             receiverName: item.payer?.name || "Unknown",
             receiverId: item.payer?.id || "",
+            splitIds: [s.id],
+            offsetSplitIds: [],
           }));
       });
   }, [items, senderId]);
@@ -49,7 +54,7 @@ export function useSettlementForm(
       return;
     }
     setSelectedDebt(debt);
-  }
+  };
 
   const handleConfirmPayment = async () => {
     if (!selectedDebt) return;
@@ -57,13 +62,14 @@ export function useSettlementForm(
     try {
       setIsSubmitting(true);
       setErrorMessage(null);
-      
+
       await createSettlement({
         amount: selectedDebt.amount,
         senderId,
         receiverId: selectedDebt.receiverId,
-        splitId: selectedDebt.id, 
-        splitIds: selectedDebt.splitIds,
+        splitId: selectedDebt.id,
+        splitIds: selectedDebt.splitIds || [],
+        offsetSplitIds: selectedDebt.offsetSplitIds || [],
         groupId: group.id,
       });
 
@@ -75,15 +81,17 @@ export function useSettlementForm(
     } finally {
       setIsSubmitting(false);
     }
-  }
+  };
 
   return {
-    senderId, setSenderId,
+    senderId,
+    setSenderId,
     unpaidDebts,
-    selectedDebt, setSelectedDebt,
+    selectedDebt,
+    setSelectedDebt,
     isSubmitting,
     errorMessage,
     handleInitiatePayment,
-    handleConfirmPayment
+    handleConfirmPayment,
   };
 }
