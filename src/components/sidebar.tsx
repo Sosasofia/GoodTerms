@@ -89,11 +89,10 @@ export function Sidebar({
                 <div
                   key={group.id}
                   ref={openMenuId === group.id ? menuRef : undefined}
-                  className={`relative flex items-center gap-2 rounded-lg transition-all ${
-                    isActive
-                      ? "bg-blue-600 text-white shadow-lg shadow-blue-900/50"
-                      : "text-slate-400 hover:text-white hover:bg-slate-800"
-                  }`}
+                  className={`relative flex items-center gap-2 rounded-lg transition-all ${isActive
+                    ? "bg-blue-600 text-white shadow-lg shadow-blue-900/50"
+                    : "text-slate-400 hover:text-white hover:bg-slate-800"
+                    }`}
                 >
                   <Link
                     href={`/groups/${group.id}`}
