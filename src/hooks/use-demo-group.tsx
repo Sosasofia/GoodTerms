@@ -9,7 +9,7 @@ export function useDemoGroup(groups: any[], refreshGroups: () => Promise<void>) 
   const { user, isLoaded } = useUser();
   const router = useRouter();
 
-  const isDemoMember = groups.some((g) => g.code === "BALI-2025");
+  const isDemoMember = groups.some((g) => g.name === "BALI-2025" || g.code.startsWith("DEMO-"));
 
   const handleDemo = async () => {
     if (!isLoaded || demoLoading) return;
@@ -17,38 +17,40 @@ export function useDemoGroup(groups: any[], refreshGroups: () => Promise<void>) 
     setDemoLoading(true);
 
     try {
+      // 1. Generate the private sandbox
+      const cloneRes = await fetch("/api/demo/clone", { method: "POST" });
+      if (!cloneRes.ok) throw new Error("Failed to generate sandbox");
+      const { code: sandboxCode } = await cloneRes.json();
+
+      const demoName = "Demo User";
+
+      // 2. Claim the user inside the new sandbox
       if (user) {
-        try {
-          await joinGroup({ code: "BALI-2025", memberName: user.firstName || "Demo User" });
-        } catch (error: any) {
-          if (error.message?.includes("Group not found")) {
-            throw error;
-          }
-        }
+        await joinGroup({
+          code: sandboxCode,
+          memberName: demoName,
+          guestName: demoName,
+          action: "claim"
+        });
       } else {
         const guestId = getOrCreateGuestId();
-        const memberName = localStorage.getItem("guest_name") || "Demo User";
-        localStorage.setItem("guest_name", memberName);
+        localStorage.setItem("guest_name", demoName);
 
-        try {
-          await joinGroup(
-            {
-              code: "BALI-2025",
-              //guestId: getOrCreateGuestId(),
-              memberName,
-              action: "claim",
-            },
-          );
-        } catch (error: any) { }
+        await joinGroup({
+          code: sandboxCode,
+          guestName: demoName,
+          guestId: guestId,
+          memberName: demoName,
+          action: "claim",
+        });
       }
 
       await refreshGroups();
       await new Promise((resolve) => setTimeout(resolve, 300));
 
       const freshGroups = await getGroups();
-      const demoGroup = (freshGroups || []).find(
-        (g: any) => g.code === "BALI-2025",
-      );
+      const demoGroup = (freshGroups || []).find((g: any) => g.code === sandboxCode);
+
       if (demoGroup) {
         router.push(`/groups/${demoGroup.id}`);
       }
@@ -58,5 +60,6 @@ export function useDemoGroup(groups: any[], refreshGroups: () => Promise<void>) 
       setDemoLoading(false);
     }
   };
+
   return { handleDemo, isDemoMember, demoLoading };
 }

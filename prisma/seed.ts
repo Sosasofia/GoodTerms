@@ -10,22 +10,26 @@ async function main() {
   for (const code of groupCodes) {
     const group = await prisma.group.findUnique({ where: { code } });
     if (group) {
+      await prisma.split.deleteMany({
+        where: { expense: { groupId: group.id } },
+      });
+      await prisma.expense.deleteMany({ where: { groupId: group.id } });
+      await prisma.member.deleteMany({ where: { groupId: group.id } });
       await prisma.group.delete({ where: { id: group.id } });
     }
   }
 
   const demoEmails = [
-    "alice@demo.com",
+    "duser@demo.com",
     "bob@demo.com",
     "carol@demo.com",
     "david@demo.com",
-    "emma@demo.com",
-    "frank@demo.com",
   ];
 
   for (const email of demoEmails) {
     const user = await prisma.user.findFirst({ where: { email } });
     if (user) {
+      await prisma.member.deleteMany({ where: { userId: user.id } });
       await prisma.user.delete({ where: { id: user.id } });
     }
   }
@@ -33,12 +37,10 @@ async function main() {
   console.log("🌱 Seeding demo users...");
 
   const demoUsers = [
-    { name: "Alice Chen", email: "alice@demo.com", guestId: uuidv4() },
+    { name: "Demo User", email: "duser@demo.com", guestId: uuidv4() },
     { name: "Bob Martinez", email: "bob@demo.com", guestId: uuidv4() },
     { name: "Carol Singh", email: "carol@demo.com", guestId: uuidv4() },
     { name: "David Lee", email: "david@demo.com", guestId: uuidv4() },
-    { name: "Emma Wilson", email: "emma@demo.com", guestId: uuidv4() },
-    { name: "Frank Johnson", email: "frank@demo.com", guestId: uuidv4() },
   ];
 
   const users = await Promise.all(
@@ -63,10 +65,10 @@ async function main() {
       ownerId: users[0].id,
       members: {
         create: [
-          { name: users[0].name, userId: users[0].id },
-          { name: users[1].name, userId: users[1].id },
-          { name: users[2].name, userId: users[2].id },
-          { name: users[3].name, userId: users[3].id },
+          { name: users[0].name, userId: null },
+          { name: users[1].name, userId: null },
+          { name: users[2].name, userId: null },
+          { name: users[3].name, userId: null },
         ],
       },
     },

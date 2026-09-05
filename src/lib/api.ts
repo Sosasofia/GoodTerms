@@ -24,6 +24,8 @@ export interface JoinGroupPayload {
   code: string;
   pin?: string;
   memberName: string;
+  guestName?: string;
+  guestId?: string;
   action?: "join" | "claim";
 }
 
