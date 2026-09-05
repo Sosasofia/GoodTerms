@@ -5,7 +5,7 @@ import { v4 as uuidv4 } from "uuid";
 export async function POST() {
   try {
     const template = await prisma.group.findUnique({
-      where: { code: "BALI-2025" },
+      where: { code: "DEMO-BALI-2025" },
       include: {
         members: true,
         expenses: { include: { splits: true } },

@@ -6,7 +6,7 @@ const prisma = new PrismaClient();
 async function main() {
   console.log("🧹 Cleaning up old demo data...");
 
-  const groupCodes = ["BALI-2025", "DEMO_SEED_MARKER_2025"];
+  const groupCodes = ["DEMO-BALI-2025"];
   for (const code of groupCodes) {
     const group = await prisma.group.findUnique({ where: { code } });
     if (group) {
@@ -49,7 +49,6 @@ async function main() {
         data: {
           name: user.name,
           email: user.email,
-          guestId: user.guestId,
         },
       }),
     ),
@@ -60,7 +59,7 @@ async function main() {
   const baliGroup = await prisma.group.create({
     data: {
       name: "Bali Trip 2025",
-      code: "BALI-2025",
+      code: "DEMO-BALI-2025",
       pin: null,
       ownerId: users[0].id,
       members: {

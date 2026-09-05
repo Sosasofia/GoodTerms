@@ -17,14 +17,14 @@ export function useDemoGroup(groups: any[], refreshGroups: () => Promise<void>) 
     setDemoLoading(true);
 
     try {
-      // 1. Generate the private sandbox
       const cloneRes = await fetch("/api/demo/clone", { method: "POST" });
+
       if (!cloneRes.ok) throw new Error("Failed to generate sandbox");
+
       const { code: sandboxCode } = await cloneRes.json();
 
       const demoName = "Demo User";
 
-      // 2. Claim the user inside the new sandbox
       if (user) {
         await joinGroup({
           code: sandboxCode,
@@ -50,6 +50,7 @@ export function useDemoGroup(groups: any[], refreshGroups: () => Promise<void>) 
 
       const freshGroups = await getGroups();
       const demoGroup = (freshGroups || []).find((g: any) => g.code === sandboxCode);
+
 
       if (demoGroup) {
         router.push(`/groups/${demoGroup.id}`);
