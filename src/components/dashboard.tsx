@@ -47,41 +47,16 @@ export function Dashboard({
     }
   }, [editingExpense]);
 
-  const balances = useMemo(() => calculateBalances(groupState, items), [items, groupState]);
-  const isGroupOwner = Boolean(
-    user?.id && groupState.owner?.clerkId === user.id,
-  );
+  const balances = useMemo(() =>
+    calculateBalances(groupState, items),
+    [items, groupState]);
 
   return (
     <div className="max-w-2xl mx-auto">
       <div className="flex justify-between items-end mb-6 border-b pb-4">
-        <div>
-          <h2 className="text-3xl font-extrabold text-slate-900">
-            {groupState.name}
-          </h2>
-
-          <div className="flex flex-wrap items-center gap-3 mt-2 text-sm font-medium">
-            <span className="bg-slate-100 text-slate-600 px-3 py-1 rounded-md font-mono border border-slate-200">
-              Code: {" "}
-              <span className="font-bold text-slate-900 select-all">
-                {groupState.code}
-              </span>
-            </span>
-
-            {groupState.pin && (
-              <span className="bg-yellow-50 text-yellow-700 px-3 py-1 rounded-md font-mono border border-yellow-200 flex items-center gap-1">
-                🔒 PIN: {" "}
-                <span className="font-bold select-all">{groupState.pin}</span>
-              </span>
-            )}
-
-            {groupState.isArchived && (
-              <span className="bg-slate-200 text-slate-700 px-3 py-1 rounded-md border border-slate-300 font-bold uppercase tracking-wide text-[10px]">
-                Archived
-              </span>
-            )}
-          </div>
-        </div>
+        <h2 className="text-3xl font-extrabold text-slate-900">
+          {groupState.name}
+        </h2>
       </div>
 
       <div className="grid grid-cols-3 gap-2 mb-8">

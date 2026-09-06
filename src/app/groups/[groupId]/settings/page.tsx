@@ -78,6 +78,47 @@ export default function GroupSettingsPage() {
 
         {isOwner ? (
           <div className="mt-6">
+            {/* I wanto to add a button to copy the group code to the clipboard */}
+            <div className="flex flex-wrap items-center gap-3 mb-6 text-sm font-medium">
+              <span className="bg-slate-100 text-slate-600 px-3 py-1 rounded-md font-mono border border-slate-200">
+                Code: {" "}
+                <span className="font-bold text-slate-900 select-all">
+                  {group.code}
+                </span>
+                <button
+                  type="button"
+                  className="cursor-pointer ml-2 text-[0.65rem] text-slate-500 hover:text-slate-700"
+                  onClick={() => {
+                    navigator.clipboard.writeText(group.code);
+                  }}
+                >
+                  Copy
+                </button>
+              </span>
+
+              {group.pin && (
+                <span className="bg-yellow-50 text-yellow-700 px-3 py-1 rounded-md font-mono border border-yellow-200 flex items-center gap-1">
+                  PIN: {" "}
+                  <span className="font-bold select-all">{group.pin}</span>
+                  <button
+                    type="button"
+                    className="cursor-pointer ml-2 text-[0.65rem] text-yellow-700 hover:text-slate-700"
+                    onClick={() => {
+                      navigator.clipboard.writeText(group.pin ?? "");
+                    }}
+                  >
+                    Copy
+                  </button>
+                </span>
+
+              )}
+
+              {group.isArchived && (
+                <span className="bg-slate-200 text-slate-700 px-3 py-1 rounded-md border border-slate-300 font-bold uppercase tracking-wide text-[10px]">
+                  Archived
+                </span>
+              )}
+            </div>
             <GroupSettings
               group={group}
               isOwner={true}
