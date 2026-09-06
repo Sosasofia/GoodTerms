@@ -39,19 +39,31 @@ export function GroupSettings({ group, isOwner, onUpdated }: GroupSettingsProps)
                     </div>
                 )}
 
-                <div>
-                    <label className="mb-2 block text-[11px] font-black uppercase tracking-[0.18em] text-slate-500">
-                        Group PIN
-                    </label>
-                    <input
-                        type="text"
-                        value={state.pin}
-                        onChange={(e) => actions.setPin(e.target.value)}
-                        placeholder="Leave blank for no PIN"
-                        className="w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-3 text-base text-slate-800 placeholder:text-slate-400 focus:border-blue-400 focus:bg-white focus:outline-none focus:ring-4 focus:ring-blue-100"
-                    />
+                <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                        <label className="mb-2 block text-[11px] font-black uppercase tracking-[0.18em] text-slate-500">
+                            Group CODE
+                        </label>
+                        <input
+                            type="text"
+                            value={state.code}
+                            onChange={(e) => actions.setCode(e.target.value)}
+                            className="w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-3 text-base text-slate-800 placeholder:text-slate-400 focus:border-blue-400 focus:bg-white focus:outline-none focus:ring-4 focus:ring-blue-100"
+                        />
+                    </div>
+                    <div className="space-y-2">
+                        <label className="mb-2 block text-[11px] font-black uppercase tracking-[0.18em] text-slate-500">
+                            Group PIN
+                        </label>
+                        <input
+                            type="text"
+                            value={state.pin}
+                            onChange={(e) => actions.setPin(e.target.value)}
+                            placeholder="Leave blank for no PIN"
+                            className="w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-3 text-base text-slate-800 placeholder:text-slate-400 focus:border-blue-400 focus:bg-white focus:outline-none focus:ring-4 focus:ring-blue-100"
+                        />
+                    </div>
                 </div>
-
                 <label className="flex items-center justify-between rounded-xl border border-slate-200 bg-slate-50 p-4">
                     <div>
                         <div className="text-base font-bold text-slate-800">Archive group</div>
@@ -71,7 +83,7 @@ export function GroupSettings({ group, isOwner, onUpdated }: GroupSettingsProps)
                     type="button"
                     onClick={actions.handleSave}
                     disabled={state.loading}
-                    className="w-full rounded-xl bg-blue-600 px-4 py-3 text-base font-bold text-white transition-colors hover:bg-blue-700 disabled:cursor-not-allowed disabled:bg-slate-400"
+                    className="w-full cursor-pointer rounded-xl bg-blue-600 px-4 py-3 text-base font-bold text-white transition-colors hover:bg-blue-700 disabled:cursor-not-allowed disabled:bg-slate-400"
                 >
                     {state.loading ? "Saving..." : "Save settings"}
                 </button>

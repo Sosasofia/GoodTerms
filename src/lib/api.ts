@@ -31,6 +31,7 @@ export interface JoinGroupPayload {
 
 export interface GroupSettingsPayload {
   pin?: string | null;
+  code?: string | null;
   isArchived?: boolean;
   action?: "transferOwner";
   memberId?: string;
