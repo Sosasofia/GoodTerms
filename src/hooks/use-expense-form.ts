@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useState } from "react";
 import { Group, Transaction } from "@/lib/types";
 import { createExpense, updateExpense } from "@/lib/api";
 
@@ -25,28 +25,33 @@ export function useExpenseForm(
   const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
-  const resetForm = () => {
+  const resetForm = useCallback(() => {
     setDesc("");
     setAmount("");
     setNote("");
     setDueDate("");
     setPayerId(group.members[0]?.id || "");
     setInvolved(group.members.map((m) => m.id));
-  };
+  }, [group.members]);
 
-  useEffect(() => {
+  const [prevExpense, setPrevExpense] = useState<Transaction | null>(
+    initialExpense || null,
+  );
+
+  if (initialExpense !== prevExpense) {
+    setPrevExpense(initialExpense || null);
+
     if (!initialExpense || initialExpense.type !== "expense") {
       resetForm();
-      return;
+    } else {
+      setDesc(initialExpense.description);
+      setAmount(String(initialExpense.amount));
+      setNote(initialExpense.note || "");
+      setDueDate(formatDateForInput(initialExpense.dueDate || null));
+      setPayerId(initialExpense.payer.id);
+      setInvolved(initialExpense.splits.map((split) => split.debtor.id));
     }
-
-    setDesc(initialExpense.description);
-    setAmount(String(initialExpense.amount));
-    setNote(initialExpense.note || "");
-    setDueDate(formatDateForInput(initialExpense.dueDate || null));
-    setPayerId(initialExpense.payer.id);
-    setInvolved(initialExpense.splits.map((split) => split.debtor.id));
-  }, [group.members, initialExpense]);
+  }
 
   const toggleUser = (userId: string) => {
     if (involved.includes(userId)) {
@@ -73,7 +78,8 @@ export function useExpenseForm(
     setIsLoading(true);
 
     try {
-      const splitAmount = parsedAmount / involved.length;
+      const splitAmount = Number((parsedAmount / involved.length).toFixed(2));
+
       const payload = {
         description: desc.trim(),
         amount: parsedAmount,

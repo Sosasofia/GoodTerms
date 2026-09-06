@@ -19,7 +19,6 @@ export default function GroupPage({
 
   const activeGroup = groups.find((g) => g.id === groupId);
   const viewerId = getGroupViewerId(activeGroup, user?.id);
-  const [groupState, setGroupState] = useState<Group | null>(activeGroup ?? null);
 
   const [items, setItems] = useState<Expense[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -34,10 +33,6 @@ export default function GroupPage({
     }
   }, [groupId]);
 
-  useEffect(() => {
-    setGroupState(activeGroup ?? null);
-  }, [activeGroup]);
-
   if (groupsLoading || (isLoading && items.length === 0)) {
     return (
       <div className="p-4 md:p-8">
@@ -46,7 +41,7 @@ export default function GroupPage({
     );
   }
 
-  if (!activeGroup || !groupState) return null;
+  if (!activeGroup) return null;
 
   const refreshExpenses = () => {
     setEditingExpense(null);
@@ -86,13 +81,14 @@ export default function GroupPage({
   const deletingExpense = items.find(
     (item) => item.type === "expense" && item.id === deletingExpenseId,
   );
+
   const deletingExpenseData =
     deletingExpense && deletingExpense.type === "expense" ? deletingExpense : null;
 
   return (
     <div className="p-4 md:p-8">
       <Dashboard
-        group={groupState}
+        group={activeGroup}
         items={items}
         viewerId={viewerId}
         onUpdate={refreshExpenses}
