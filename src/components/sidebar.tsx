@@ -125,7 +125,7 @@ export function Sidebar({
                             setOpenMenuId(null);
                             router.push(`/groups/${group.id}/settings`);
                           }}
-                          className="flex w-full items-center justify-between px-3 py-2.5 text-left text-sm font-medium text-white transition-colors hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-40"
+                          className="flex cursor-pointer w-full items-center justify-between px-3 py-2.5 text-left text-sm font-medium text-white transition-colors hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-40"
                         >
                           <span>Edit group</span>
                           {!owner && <span className="text-[10px] uppercase tracking-wide text-slate-400">Locked</span>}
@@ -137,7 +137,7 @@ export function Sidebar({
                             void handleCopyCode(group);
                             setOpenMenuId(null);
                           }}
-                          className="flex w-full items-center justify-between px-3 py-2.5 text-left text-sm font-medium text-white transition-colors hover:bg-slate-800"
+                          className="flex cursor-pointer w-full items-center justify-between px-3 py-2.5 text-left text-sm font-medium text-white transition-colors hover:bg-slate-800"
                         >
                           <span>Copy group code</span>
                           {copiedGroupId === group.id && <span className="text-[10px] uppercase tracking-wide text-emerald-400">Copied</span>}
