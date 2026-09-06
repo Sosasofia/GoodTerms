@@ -143,7 +143,7 @@ export function GroupSettings({ group, isOwner, onUpdated }: GroupSettingsProps)
                                 type="text"
                                 value={state.newMemberName}
                                 onChange={(e) => actions.setNewMemberName(e.target.value)}
-                                placeholder="Search members..."
+                                placeholder="New member name..."
                                 className="flex-1 bg-transparent border border-slate-300 text-sm text-slate-600 placeholder:text-slate-400 focus:border-blue-400 focus:outline-none focus:ring-4 focus:ring-blue-100 rounded-lg px-3 py-2"
                                 disabled={state.isAddingMember}
                             />
@@ -159,7 +159,7 @@ export function GroupSettings({ group, isOwner, onUpdated }: GroupSettingsProps)
 
                     <div className="space-y-2">
                         {group.members.map((member) => {
-                            const isOwnerMember = member.id === group.ownerId;
+                            const isOwnerMember = member.userId === group.ownerId;
                             const isRemoving = state.memberActionLoading === member.id;
 
                             return (
@@ -167,7 +167,7 @@ export function GroupSettings({ group, isOwner, onUpdated }: GroupSettingsProps)
                                     key={member.id}
                                     className="flex items-center justify-between gap-3 rounded-lg border border-slate-200 bg-white px-3 py-2"
                                 >
-                                    <div>
+                                    <div className="flex w-full items-center justify-between gap-2">
                                         <div className="font-medium text-slate-800">{member.name}</div>
                                         {isOwnerMember && (
                                             <div className="text-[10px] font-bold uppercase tracking-[0.16em] text-blue-700">
