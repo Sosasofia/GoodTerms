@@ -100,12 +100,8 @@ export async function PATCH(
           ? null
           : String(body.pin).trim();
 
-    const nextCode =
-      body.code === undefined
-        ? undefined
-        : body.code === null || String(body.code).trim() === ""
-          ? null
-          : String(body.code).trim();
+    const newName =
+      body.name === undefined ? undefined : String(body.name).trim();
 
     const updated = await prisma.group.update({
       where: { id: groupId },
@@ -114,7 +110,7 @@ export async function PATCH(
         ...(body.isArchived !== undefined
           ? { isArchived: Boolean(body.isArchived) }
           : {}),
-        ...(nextCode !== null ? { code: nextCode } : {}),
+        ...(newName !== null ? { name: newName } : {}),
       },
       include: { owner: true, members: { include: { user: true } } },
     });

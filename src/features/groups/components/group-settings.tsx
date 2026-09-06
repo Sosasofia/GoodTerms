@@ -42,12 +42,12 @@ export function GroupSettings({ group, isOwner, onUpdated }: GroupSettingsProps)
                 <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
                         <label className="mb-2 block text-[11px] font-black uppercase tracking-[0.18em] text-slate-500">
-                            Group CODE
+                            Group NAME
                         </label>
                         <input
                             type="text"
-                            value={state.code}
-                            onChange={(e) => actions.setCode(e.target.value)}
+                            value={state.name}
+                            onChange={(e) => actions.setName(e.target.value)}
                             className="w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-3 text-base text-slate-800 placeholder:text-slate-400 focus:border-blue-400 focus:bg-white focus:outline-none focus:ring-4 focus:ring-blue-100"
                         />
                     </div>

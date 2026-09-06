@@ -25,7 +25,7 @@ export function useGroupSettings(
   const { user } = useUser();
 
   const [pin, setPin] = useState(group.pin || "");
-  const [code, setCode] = useState(group.code);
+  const [name, setName] = useState(group.name);
   const [isArchived, setIsArchived] = useState(Boolean(group.isArchived));
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -58,7 +58,7 @@ export function useGroupSettings(
     try {
       const updated = await updateGroupSettings(group.id, {
         pin: pin.trim() ? pin.trim() : null,
-        code: code.trim(),
+        name: name.trim(),
         isArchived,
       });
 
@@ -66,7 +66,7 @@ export function useGroupSettings(
         updated ?? {
           ...group,
           pin: pin.trim() ? pin.trim() : null,
-          code: code.trim(),
+          name: name.trim(),
           isArchived,
         },
       );
@@ -169,7 +169,7 @@ export function useGroupSettings(
   return {
     state: {
       pin,
-      code,
+      name,
       isArchived,
       loading,
       error,
@@ -184,7 +184,7 @@ export function useGroupSettings(
     },
     actions: {
       setPin,
-      setCode,
+      setName,
       setIsArchived,
       setTransferMemberId,
       setPendingAction,
