@@ -110,7 +110,7 @@ export async function PATCH(
         ...(body.isArchived !== undefined
           ? { isArchived: Boolean(body.isArchived) }
           : {}),
-        ...(newName !== null ? { name: newName } : {}),
+        ...(newName !== undefined && newName !== "" ? { name: newName } : {}),
       },
       include: { owner: true, members: { include: { user: true } } },
     });

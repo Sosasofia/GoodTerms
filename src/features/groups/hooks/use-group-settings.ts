@@ -52,6 +52,13 @@ export function useGroupSettings(
   const handleSave = async () => {
     setLoading(true);
 
+    if (!name.trim()) {
+      setName(group.name);
+      toast.error("Group name cannot be empty.");
+      setLoading(false);
+      return;
+    }
+
     try {
       const updated = await updateGroupSettings(group.id, {
         pin: pin.trim() ? pin.trim() : null,
