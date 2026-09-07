@@ -38,7 +38,7 @@ export function ExpenseForm({
   return (
     <div
       className={`bg-white p-6 rounded-xl shadow-lg border-t-4 transition-all duration-200 ${isEditing
-        ? "border-blue-500 ring-2 ring-blue-200 shadow-blue-100"
+        ? "border-slate-300 ring-2 ring-slate-100 shadow-sm bg-slate-50"
         : "border-blue-500"
         }`}
     >
@@ -50,7 +50,12 @@ export function ExpenseForm({
             </h3>
             {isEditing && (
               <span className="inline-flex items-center gap-1 rounded-full bg-blue-100 px-2 py-0.5 text-xs font-bold text-blue-700">
-                ✏️ Updating
+                Updating
+                <span className="inline-flex ml-0.5">
+                  <span className="animate-bounce">.</span>
+                  <span className="animate-bounce [animation-delay:150ms]">.</span>
+                  <span className="animate-bounce [animation-delay:300ms]">.</span>
+                </span>
               </span>
             )}
           </div>
