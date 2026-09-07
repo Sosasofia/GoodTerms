@@ -2,7 +2,7 @@
 
 import { useState, useMemo, useEffect, useRef } from "react";
 import { useUser } from "@clerk/nextjs";
-import { Expense, Group } from "../lib/types";
+import { Expense, Group } from "../../../lib/types";
 import { ExpenseForm } from "./expense-form";
 import { HistoryList } from "./history-list";
 import { SettlementForm } from "./settlement-form";

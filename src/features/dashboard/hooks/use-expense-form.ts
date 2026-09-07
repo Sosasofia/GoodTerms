@@ -1,4 +1,5 @@
 import { useCallback, useState } from "react";
+import { toast } from "sonner";
 import { Group, Transaction } from "@/lib/types";
 import { createExpense, updateExpense } from "@/lib/api";
 
@@ -101,13 +102,14 @@ export function useExpenseForm(
       resetForm();
       setIsLoading(false);
       onSuccess();
+      toast.success("Expense saved successfully!");
     } catch (error: any) {
       const rawMessage = error?.message || "An unexpected error occurred.";
       const safeMessage = rawMessage.includes("Unknown argument")
         ? "Could not save the expense. Please check the entry details and try again."
         : rawMessage;
-
-      setErrorMessage(safeMessage);
+      toast.error(safeMessage);
+    } finally {
       setIsLoading(false);
     }
   };

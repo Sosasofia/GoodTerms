@@ -2,8 +2,8 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { useUser } from "@clerk/nextjs";
-import { Group } from "../lib/types";
-import { getGroups } from "../lib/api";
+import { Group } from "../../../lib/types";
+import { getGroups } from "../../../lib/api";
 
 export function useGroups() {
   const { isLoaded } = useUser();

@@ -1,8 +1,8 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { Group, Transaction } from "../lib/types";
-import { useSettlementForm } from "@/hooks/use-settlement-form";
+import { Group, Transaction } from "@/lib/types";
+import { useSettlementForm } from "../hooks/use-settlement-form";
 import {
   getUserSettlementSuggestions,
   SettlementSuggestion,

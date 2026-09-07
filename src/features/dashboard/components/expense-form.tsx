@@ -1,6 +1,6 @@
-import { Expense, Group } from "../lib/types";
-import { LoadingSpinner } from "./loading-spinner";
-import { useExpenseForm } from "@/hooks/use-expense-form";
+import { Expense, Group } from "../../../lib/types";
+import { LoadingSpinner } from "../../../components/loading-spinner";
+import { useExpenseForm } from "@/features/dashboard/hooks/use-expense-form";
 
 interface ExpenseFormProps {
   group: Group;

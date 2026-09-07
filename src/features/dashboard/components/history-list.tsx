@@ -1,4 +1,4 @@
-import { Expense, Settlement } from "../lib/types";
+import { Expense, Settlement } from "@/lib/types";
 
 type HistoryItem = Expense | Settlement;
 

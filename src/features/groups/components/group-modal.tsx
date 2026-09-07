@@ -2,9 +2,8 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { createGroup, joinGroup, JoinGroupPayload } from "../lib/api";
+import { createGroup, joinGroup, JoinGroupPayload } from "@/lib/api";
 import { useUser } from "@clerk/nextjs";
-import { getOrCreateGuestId } from "../lib/identity";
 
 interface GroupModalProps {
   mode: "create" | "join";

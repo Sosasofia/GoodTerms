@@ -1,6 +1,6 @@
 import { useState, useMemo } from "react";
-import { Group, Transaction } from "../lib/types";
-import { createSettlement } from "../lib/api";
+import { Group, Transaction } from "@/lib/types";
+import { createSettlement } from "@/lib/api";
 
 export interface UnpaidDebt {
   id: string;

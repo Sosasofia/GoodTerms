@@ -2,9 +2,9 @@
 
 import { useState } from "react";
 import { Sidebar } from "@/components/sidebar";
-import { GroupModal } from "@/components/group-modal";
-import { useGroups } from "@/hooks/use-groups";
-import { useDemoGroup } from "@/hooks/use-demo-group";
+import { GroupModal } from "@/features/groups/components/group-modal";
+import { useGroups } from "@/features/groups/hooks/use-groups";
+import { useDemoGroup } from "@/features/groups/hooks/use-demo-group";
 
 export default function GroupsLayout({
   children,

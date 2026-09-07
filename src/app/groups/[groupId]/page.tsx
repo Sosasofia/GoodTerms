@@ -2,11 +2,12 @@
 
 import { useEffect, useState, use } from "react";
 import { useUser } from "@clerk/nextjs";
+import { toast } from "sonner";
 import { deleteExpense, getGroupExpenses } from "@/lib/api";
-import { Dashboard, DashboardSkeleton } from "@/components/dashboard";
-import { useGroups } from "@/hooks/use-groups";
+import { Dashboard, DashboardSkeleton } from "@/features/dashboard/components/dashboard";
+import { useGroups } from "@/features/groups/hooks/use-groups";
 import { getGroupViewerId } from "@/lib/identity";
-import { Expense, Group } from "@/lib/types";
+import { Expense } from "@/lib/types";
 
 export default function GroupPage({
   params,
@@ -59,11 +60,11 @@ export default function GroupPage({
 
   const handleDeleteExpense = (expenseId: string) => {
     const selectedExpense = items.find(
-      (item) => item.type === "expense" && item.id === expenseId,
+      (item) => item.type === "expense" && String(item.id) === String(expenseId),
     );
 
     if (!selectedExpense) return;
-    setDeletingExpenseId(expenseId);
+    setDeletingExpenseId(String(expenseId));
   };
 
   const confirmDeleteExpense = async () => {
@@ -73,13 +74,15 @@ export default function GroupPage({
       await deleteExpense(groupId, deletingExpenseId);
       setDeletingExpenseId(null);
       refreshExpenses();
+      toast.success("Expense deleted successfully!");
     } catch (error: any) {
-      alert(error.message || "Failed to delete expense.");
+      toast.error(error.message || "Failed to delete expense.");
+      setDeletingExpenseId(null);
     }
   };
 
   const deletingExpense = items.find(
-    (item) => item.type === "expense" && item.id === deletingExpenseId,
+    (item) => item.type === "expense" && String(item.id) === String(deletingExpenseId),
   );
 
   const deletingExpenseData =

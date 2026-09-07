@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { useUser } from "@clerk/nextjs";
 import { useParams } from "next/navigation";
 import { GroupSettings } from "@/features/groups/components/group-settings";
-import { useGroups } from "@/hooks/use-groups";
+import { useGroups } from "@/features/groups/hooks/use-groups";
 import { Group } from "@/lib/types";
 
 export default function GroupSettingsPage() {
