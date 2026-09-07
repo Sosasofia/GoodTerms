@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useUser } from "@clerk/nextjs";
+import { toast } from "sonner";
 import { Group } from "@/lib/types";
 import {
   leaveGroup,
@@ -28,8 +29,6 @@ export function useGroupSettings(
   const [name, setName] = useState(group.name);
   const [isArchived, setIsArchived] = useState(Boolean(group.isArchived));
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
-  const [success, setSuccess] = useState("");
 
   const [memberActionLoading, setMemberActionLoading] = useState<string | null>(
     null,
@@ -52,8 +51,6 @@ export function useGroupSettings(
 
   const handleSave = async () => {
     setLoading(true);
-    setError("");
-    setSuccess("");
 
     try {
       const updated = await updateGroupSettings(group.id, {
@@ -70,24 +67,22 @@ export function useGroupSettings(
           isArchived,
         },
       );
-      setSuccess("Group settings saved.");
+      toast.success("Group settings saved successfully.");
     } catch (err: any) {
-      setError(err.message || "Failed to save settings.");
+      toast.error(err.message || "Failed to save settings.");
     } finally {
       setLoading(false);
     }
   };
 
   const handleLeaveGroup = async () => {
-    setError("");
-    setSuccess("");
     setMemberActionLoading("leave");
 
     try {
       await leaveGroup(group.id);
       router.push("/groups");
     } catch (err: any) {
-      setError(err.message || "Failed to leave group.");
+      toast.error(err.message || "Failed to leave group.");
     } finally {
       setMemberActionLoading(null);
       setPendingAction(null);
@@ -95,16 +90,14 @@ export function useGroupSettings(
   };
 
   const handleRemoveMember = async (memberId: string) => {
-    setError("");
-    setSuccess("");
     setMemberActionLoading(memberId);
 
     try {
       const updated = await removeGroupMember(group.id, memberId);
       onUpdated(updated ?? group);
-      setSuccess("Member removed from the group.");
+      toast.success("Member removed from the group.");
     } catch (err: any) {
-      setError(err.message || "Failed to remove member.");
+      toast.error(err.message || "Failed to remove member.");
     } finally {
       setMemberActionLoading(null);
       setPendingAction(null);
@@ -120,8 +113,6 @@ export function useGroupSettings(
     }
 
     if (pendingAction.type === "transfer" && pendingAction.memberId) {
-      setError("");
-      setSuccess("");
       setMemberActionLoading(`transfer:${pendingAction.memberId}`);
 
       try {
@@ -131,10 +122,10 @@ export function useGroupSettings(
         });
 
         onUpdated(updated ?? { ...group, ownerId: pendingAction.memberId });
-        setSuccess("Group manager transferred successfully.");
+        toast.success("Group manager transferred successfully.");
         setTransferMemberId("");
       } catch (err: any) {
-        setError(err.message || "Failed to transfer manager.");
+        toast.error(err.message || "Failed to transfer manager.");
       } finally {
         setMemberActionLoading(null);
         setPendingAction(null);
@@ -149,18 +140,15 @@ export function useGroupSettings(
 
   const handleAddMember = async (event: React.FormEvent) => {
     event.preventDefault();
-
-    setError("");
-    setSuccess("");
     setIsAddingMember(true);
 
     try {
       const updated = await addGroupMember(group.id, newMemberName.trim());
       onUpdated(updated ?? group);
-      setSuccess("Member added to the group.");
+      toast.success("Member added to the group.");
       setNewMemberName("");
     } catch (err: any) {
-      setError(err.message || "Failed to add member.");
+      toast.error(err.message || "Failed to add member.");
     } finally {
       setIsAddingMember(false);
     }
@@ -172,8 +160,6 @@ export function useGroupSettings(
       name,
       isArchived,
       loading,
-      error,
-      success,
       memberActionLoading,
       transferMemberId,
       pendingAction,

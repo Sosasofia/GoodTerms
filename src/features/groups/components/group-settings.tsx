@@ -26,19 +26,6 @@ export function GroupSettings({ group, isOwner, onUpdated }: GroupSettingsProps)
             </div>
 
             <div className="space-y-5 p-5">
-                {/* TODO: Change to toast */}
-                {state.error && (
-                    <div className="rounded-lg border border-red-200 bg-red-50 p-2 text-sm text-red-700">
-                        {state.error}
-                    </div>
-                )}
-
-                {state.success && (
-                    <div className="rounded-lg border border-green-200 bg-green-50 p-2 text-sm text-green-700">
-                        {state.success}
-                    </div>
-                )}
-
                 <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
                         <label className="mb-2 block text-[11px] font-black uppercase tracking-[0.18em] text-slate-500">
