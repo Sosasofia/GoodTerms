@@ -32,7 +32,18 @@ export default function RootLayout({
           className={`${geistSans.variable} ${geistMono.variable} antialiased`}
         >
           {children}
-          <Toaster position="bottom-right" richColors closeButton />
+          <Toaster
+            closeButton
+            richColors
+            position="bottom-right"
+            icons={{
+              success: null,
+              error: null,
+              info: null,
+              warning: null,
+              loading: null,
+            }}
+          />
         </body>
       </html>
     </ClerkProvider>
