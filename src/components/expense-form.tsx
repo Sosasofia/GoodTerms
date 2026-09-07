@@ -38,17 +38,11 @@ export function ExpenseForm({
   return (
     <div
       className={`bg-white p-6 rounded-xl shadow-lg border-t-4 transition-all duration-200 ${isEditing
-          ? "border-blue-500 ring-2 ring-blue-200 shadow-blue-100"
-          : "border-blue-500"
+        ? "border-blue-500 ring-2 ring-blue-200 shadow-blue-100"
+        : "border-blue-500"
         }`}
     >
       <form onSubmit={handleSubmit} className="space-y-4">
-        {errorMessage && (
-          <div className="p-3 text-sm font-medium text-red-800 bg-red-100 rounded-lg border border-red-200">
-            {errorMessage}
-          </div>
-        )}
-
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <h3 className="text-lg font-bold text-slate-800">
@@ -93,8 +87,8 @@ export function ExpenseForm({
 
         <div
           className={`rounded-xl border p-3 transition-all ${dueDate
-              ? "border-amber-300 bg-amber-50 shadow-sm"
-              : "border-slate-200 bg-slate-50"
+            ? "border-amber-300 bg-amber-50 shadow-sm"
+            : "border-slate-200 bg-slate-50"
             }`}
         >
           <label className="mb-1 block text-xs font-bold uppercase tracking-wide text-slate-500">
@@ -149,6 +143,12 @@ export function ExpenseForm({
           </div>
         </div>
 
+        {errorMessage && (
+          <div className="p-3 text-sm font-medium text-red-700 bg-red-100 rounded-lg border border-red-200">
+            {errorMessage}
+          </div>
+        )}
+
         <button
           disabled={isLoading}
           className="w-full bg-blue-600 text-white font-bold py-3 rounded-lg cursor-pointer"
@@ -161,6 +161,9 @@ export function ExpenseForm({
             "Save Expense"
           )}
         </button>
+
+
+
       </form>
     </div>
   );
