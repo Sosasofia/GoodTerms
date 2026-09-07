@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect, useRef } from "react";
 import { useUser } from "@clerk/nextjs";
 import { Expense, Group } from "../lib/types";
 import { ExpenseForm } from "./expense-form";
@@ -36,6 +36,7 @@ export function Dashboard({
     "expense",
   );
   const [groupState, setGroupState] = useState(group);
+  const dashboardRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     setGroupState(group);
@@ -47,12 +48,21 @@ export function Dashboard({
     }
   }, [editingExpense]);
 
+  const handleEditExpense = (item: Expense) => {
+    onEditExpense?.(item);
+
+    const scrollContainer = dashboardRef.current?.closest("main");
+    if (scrollContainer instanceof HTMLElement) {
+      scrollContainer.scrollTo({ top: 0, behavior: "smooth" });
+    }
+  };
+
   const balances = useMemo(() =>
     calculateBalances(groupState, items),
     [items, groupState]);
 
   return (
-    <div className="max-w-2xl mx-auto">
+    <div ref={dashboardRef} className="max-w-2xl mx-auto">
       <div className="flex justify-between items-end mb-6 border-b pb-4">
         <h2 className="text-3xl font-extrabold text-slate-900">
           {groupState.name}
@@ -126,10 +136,7 @@ export function Dashboard({
 
       <HistoryList
         items={items}
-        onEditExpense={(item) => {
-          setActiveTab("expense");
-          onEditExpense?.(item);
-        }}
+        onEditExpense={handleEditExpense}
         onDeleteExpense={onDeleteExpense}
       />
     </div>

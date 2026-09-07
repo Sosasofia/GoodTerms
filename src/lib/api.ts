@@ -157,19 +157,19 @@ export const createExpense = (groupId: string, data: ExpensePayload) => {
 
 export const updateExpense = (
   groupId: string,
-  transactionId: string,
+  expenseId: string,
   data: ExpensePayload,
 ) => {
   return fetcher<Expense>(`/api/groups/${groupId}/expenses`, {
     method: "PUT",
-    body: JSON.stringify({ transactionId, ...data }),
+    body: JSON.stringify({ expenseId, ...data }),
   });
 };
 
-export const deleteExpense = (groupId: string, transactionId: string) => {
+export const deleteExpense = (groupId: string, expenseId: string) => {
   return fetcher<{ success: true }>(`/api/groups/${groupId}/expenses`, {
     method: "DELETE",
-    body: JSON.stringify({ transactionId }),
+    body: JSON.stringify({ expenseId }),
   });
 };
 

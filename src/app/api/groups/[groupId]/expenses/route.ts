@@ -374,10 +374,7 @@ export async function DELETE(request: NextRequest, { params }: RouteContext) {
 
     const { expenseId } = body;
     if (!expenseId) {
-      return NextResponse.json(
-        { error: "Missing expense id." },
-        { status: 400 },
-      );
+      throw new Error("Missing expense id.");
     }
 
     const existing = await prisma.expense.findFirst({
