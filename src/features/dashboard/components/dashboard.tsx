@@ -5,7 +5,7 @@ import { useUser } from "@clerk/nextjs";
 import { Expense, Group } from "../../../lib/types";
 import { ExpenseForm } from "./expense-form";
 import { HistoryList } from "./history-list";
-import { SettlementForm } from "./settlement-form";
+import { SettlementsPanel } from "./settlements-panel";
 import { calculateBalances } from "@/services/balances";
 
 interface DashboardProps {
@@ -125,7 +125,7 @@ export function Dashboard({
             onCancel={onCancelEdit}
           />
         ) : (
-          <SettlementForm
+          <SettlementsPanel
             group={groupState}
             items={items}
             viewerId={viewerId}

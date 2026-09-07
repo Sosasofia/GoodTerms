@@ -13,7 +13,7 @@ export interface UnpaidDebt {
   offsetSplitIds?: string[];
 }
 
-export function useSettlementForm(
+export function useSettlements(
   group: Group,
   items: Transaction[],
   viewerId: string,

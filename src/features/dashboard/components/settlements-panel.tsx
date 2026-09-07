@@ -2,26 +2,26 @@
 
 import { useMemo, useState } from "react";
 import { Group, Transaction } from "@/lib/types";
-import { useSettlementForm } from "../hooks/use-settlement-form";
+import { useSettlements } from "../hooks/use-settlements";
 import {
   getUserSettlementSuggestions,
   SettlementSuggestion,
   SettlementSuggestionMode,
 } from "@/services/balances";
 
-interface SettlementFormProps {
+interface SettlementsPanelProps {
   group: Group;
   items: Transaction[];
   viewerId: string;
   onSuccess: () => void;
 }
 
-export function SettlementForm({
+export function SettlementsPanel({
   group,
   items,
   viewerId,
   onSuccess,
-}: SettlementFormProps) {
+}: SettlementsPanelProps) {
   const {
     senderId,
     setSenderId,
@@ -32,7 +32,8 @@ export function SettlementForm({
     errorMessage,
     handleInitiatePayment,
     handleConfirmPayment,
-  } = useSettlementForm(group, items, viewerId, onSuccess);
+  } = useSettlements(group, items, viewerId, onSuccess);
+
   const [suggestionMode, setSuggestionMode] =
     useState<SettlementSuggestionMode>("total");
 
