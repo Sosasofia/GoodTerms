@@ -23,7 +23,7 @@ export interface SettlementPayload {
 export interface JoinGroupPayload {
   code: string;
   pin?: string;
-  memberName: string;
+  memberName?: string;
   guestName?: string;
   guestId?: string;
   action?: "join" | "claim";
@@ -54,14 +54,14 @@ const fetcher = async <T>(
 ): Promise<T | null> => {
   const headers = new Headers(options?.headers);
   const body = options?.body;
+  const guestId = getOrCreateGuestId();
+
+  if (guestId) {
+    headers.set("x-guest-id", guestId);
+  }
 
   if (!headers.has("Content-Type") && body && !(body instanceof FormData)) {
     headers.set("Content-Type", "application/json");
-  }
-
-  const guestId = getOrCreateGuestId();
-  if (guestId) {
-    headers.set("x-guest-id", guestId);
   }
 
   const res = await fetch(url, {

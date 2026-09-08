@@ -1,23 +1,21 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
 import { prisma } from "@/lib/prisma";
+import { authorizeGroupAccess } from "@/lib/api-utils";
 
 export async function GET(
   req: NextRequest,
   { params }: { params: Promise<{ groupId: string }> },
 ) {
   try {
+    const { userId } = await auth();
     const { groupId } = await params;
-    const group = await prisma.group.findUnique({
-      where: { id: groupId },
-      include: { owner: true, members: { include: { user: true } } },
-    });
-
-    if (!group) {
-      return NextResponse.json({ error: "Group not found" }, { status: 404 });
+    const authResult = await authorizeGroupAccess(req, groupId, userId);
+    if ("error" in authResult) {
+      return authResult.error;
     }
 
-    return NextResponse.json(group);
+    return NextResponse.json(authResult.group);
   } catch (error: any) {
     console.error("Get group error:", error);
     return NextResponse.json(

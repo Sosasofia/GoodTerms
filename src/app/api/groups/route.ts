@@ -13,7 +13,7 @@ export async function GET(req: Request) {
 
     const memberCondition = userId
       ? { user: { clerkId: userId } }
-      : { user: { guestId: guestId } };
+      : { user: { guestId } };
 
     const groups = await prisma.group.findMany({
       where: {

@@ -62,7 +62,6 @@ export async function authorizeGroupAccess(
   userId?: string | null,
 ) {
   const guestId = req.headers.get("x-guest-id");
-
   if (!userId && !guestId) {
     return {
       error: NextResponse.json({ error: "Unauthorized" }, { status: 401 }),

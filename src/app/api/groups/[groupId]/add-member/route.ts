@@ -13,7 +13,7 @@ export async function POST(req: Request) {
 
     if (!groupId || !name?.trim()) {
       return NextResponse.json(
-        { error: "Group ID and guest name are required" },
+        { error: "Group ID and member name are required" },
         { status: 400 },
       );
     }
