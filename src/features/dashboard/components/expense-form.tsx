@@ -1,6 +1,10 @@
 import { Expense, Group } from "../../../lib/types";
 import { LoadingSpinner } from "../../../components/loading-spinner";
 import { useExpenseForm } from "@/features/dashboard/hooks/use-expense-form";
+import {
+  EXPENSE_DESCRIPTION_MIN_LENGTH,
+  EXPENSE_DESCRIPTION_MAX_LENGTH,
+} from "@/lib/expense-validation";
 
 interface ExpenseFormProps {
   group: Group;
@@ -78,6 +82,9 @@ export function ExpenseForm({
         <input
           className="w-full border p-3 rounded-lg"
           placeholder="Description"
+          required
+          minLength={EXPENSE_DESCRIPTION_MIN_LENGTH}
+          maxLength={EXPENSE_DESCRIPTION_MAX_LENGTH}
           value={desc}
           onChange={(e) => setDesc(e.target.value)}
         />

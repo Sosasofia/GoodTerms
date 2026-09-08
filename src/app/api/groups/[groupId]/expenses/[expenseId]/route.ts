@@ -7,6 +7,7 @@ import {
   getSafeErrorMessage,
   authorizeGroupAccess,
 } from "@/lib/api-utils";
+import { validateExpenseDescription } from "@/lib/expense-validation";
 
 type RouteContext = {
   params: Promise<{ groupId: string; expenseId: string }>;
@@ -32,14 +33,19 @@ export async function PUT(request: NextRequest, { params }: RouteContext) {
 
     const parsedDueDate = normalizeDueDate(dueDate);
     const parsedAmount = Number(amount);
+    const descriptionError = validateExpenseDescription(description);
 
-    if (Number.isNaN(parsedAmount) || parsedAmount <= 0) {
+    if (descriptionError) {
+      return NextResponse.json({ error: descriptionError }, { status: 400 });
+    }
+
+    if (!Number.isFinite(parsedAmount) || parsedAmount <= 0) {
       return NextResponse.json({ error: "Invalid amount." }, { status: 400 });
     }
 
-    if (!description || !payerId) {
+    if (!payerId) {
       return NextResponse.json(
-        { error: "Missing description or payer." },
+        { error: "Missing payer." },
         { status: 400 },
       );
     }

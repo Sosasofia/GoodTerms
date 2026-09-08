@@ -2,6 +2,7 @@ import { useCallback, useState } from "react";
 import { toast } from "sonner";
 import { Group, Transaction } from "@/lib/types";
 import { createExpense, updateExpense } from "@/lib/api";
+import { validateExpenseDescription } from "@/lib/expense-validation";
 
 const formatDateForInput = (value?: string | null) => {
   if (!value) return "";
@@ -67,8 +68,15 @@ export function useExpenseForm(
     e.preventDefault();
     setErrorMessage(null);
 
+    const description = desc.trim();
+    const descriptionError = validateExpenseDescription(description);
+    if (descriptionError) {
+      setErrorMessage(descriptionError);
+      return;
+    }
+
     const parsedAmount = parseFloat(amount);
-    if (isNaN(parsedAmount) || parsedAmount <= 0) {
+    if (!Number.isFinite(parsedAmount) || parsedAmount <= 0) {
       setErrorMessage("Please enter a valid amount greater than zero.");
       return;
     }
@@ -83,7 +91,7 @@ export function useExpenseForm(
       const splitAmount = Number((parsedAmount / involved.length).toFixed(2));
 
       const payload = {
-        description: desc.trim(),
+        description,
         amount: parsedAmount,
         note,
         dueDate: dueDate ? new Date(`${dueDate}T12:00:00`).toISOString() : null,
