@@ -33,6 +33,7 @@ export function useExpenseForm(
     setDueDate("");
     setPayerId(group.members[0]?.id || "");
     setInvolved(group.members.map((m) => m.id));
+    setErrorMessage(null);
   }, [group.members]);
 
   const [prevExpense, setPrevExpense] = useState<Transaction | null>(
@@ -127,6 +128,7 @@ export function useExpenseForm(
     setPayerId,
     involved,
     toggleUser,
+    resetForm,
     isLoading,
     errorMessage,
     handleSubmit,

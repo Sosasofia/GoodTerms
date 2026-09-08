@@ -28,12 +28,17 @@ export function ExpenseForm({
     setPayerId,
     involved,
     toggleUser,
+    resetForm,
     isLoading,
     errorMessage,
     handleSubmit,
   } = useExpenseForm(group, onSuccess, initialExpense);
 
   const isEditing = Boolean(initialExpense && initialExpense.type === "expense");
+  const handleCancel = () => {
+    resetForm();
+    onCancel?.();
+  };
 
   return (
     <div
@@ -63,7 +68,7 @@ export function ExpenseForm({
             <button
               type="button"
               className="text-sm text-slate-500 hover:text-slate-700"
-              onClick={onCancel}
+              onClick={handleCancel}
             >
               Cancel
             </button>
