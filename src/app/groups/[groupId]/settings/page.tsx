@@ -1,25 +1,43 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useUser } from "@clerk/nextjs";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
+import { toast } from "sonner";
 import { GroupSettings } from "@/features/groups/components/group-settings";
 import { useGroups } from "@/features/groups/hooks/use-groups";
 import { Group } from "@/lib/types";
 
 export default function GroupSettingsPage() {
   const { groupId } = useParams<{ groupId: string }>();
-  const { groups, loading } = useGroups();
-  const { user } = useUser();
+  const router = useRouter();
+  const { groups, loading, error: groupsError } = useGroups();
+  const { user, isLoaded: isUserLoaded } = useUser();
+
   const [pageGroup, setPageGroup] = useState<Group | null>(null);
   const [pendingLeave, setPendingLeave] = useState(false);
+  const hasRedirected = useRef(false);
+
+  const matchedGroup = groups.find((item) => item.id === groupId) ?? null;
+  const group =
+    matchedGroup && pageGroup?.id === matchedGroup.id ? pageGroup : matchedGroup;
+  const isOwner = Boolean(user?.id && group?.owner?.clerkId === user.id);
 
   useEffect(() => {
-    setPageGroup(groups.find((item) => item.id === groupId) ?? null);
-  }, [groups, groupId]);
+    if (
+      loading ||
+      groupsError ||
+      !isUserLoaded ||
+      group ||
+      hasRedirected.current
+    ) {
+      return;
+    }
 
-  const group = pageGroup;
-  const isOwner = Boolean(user?.id && group?.owner?.clerkId === user.id);
+    hasRedirected.current = true;
+    toast.error("You don't have access to this group.");
+    router.replace("/groups");
+  }, [group, groupsError, isUserLoaded, loading, router]);
 
   const handleLeaveGroup = async () => {
     if (!group) return;
@@ -56,14 +74,23 @@ export default function GroupSettingsPage() {
     );
   }
 
-  if (!group) {
+  if (groupsError) {
     return (
       <div className="p-8">
-        <div className="mx-auto max-w-xl rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-          <h1 className="text-2xl font-bold text-slate-900">Group not found</h1>
+        <div className="mx-auto max-w-xl rounded-2xl border border-red-200 bg-red-50 p-6 shadow-sm">
+          <h1 className="text-2xl font-bold text-red-900">
+            Unable to load group settings
+          </h1>
+          <p className="mt-2 text-sm text-red-700">
+            Please try again.
+          </p>
         </div>
       </div>
     );
+  }
+
+  if (!group) {
+    return null;
   }
 
   return (
@@ -78,7 +105,6 @@ export default function GroupSettingsPage() {
 
         {isOwner ? (
           <div className="mt-6">
-            {/* I wanto to add a button to copy the group code to the clipboard */}
             <div className="flex flex-wrap items-center gap-3 mb-6 text-sm font-medium">
               <span className="bg-slate-100 text-slate-600 px-3 py-1 rounded-md font-mono border border-slate-200">
                 Code: {" "}

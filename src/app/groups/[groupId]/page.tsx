@@ -1,7 +1,8 @@
 "use client";
 
-import { useEffect, useState, use } from "react";
+import { use, useEffect, useRef, useState } from "react";
 import { useUser } from "@clerk/nextjs";
+import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { deleteExpense, getGroupExpenses } from "@/lib/api";
 import { Dashboard, DashboardSkeleton } from "@/features/dashboard/components/dashboard";
@@ -15,8 +16,10 @@ export default function GroupPage({
   params: Promise<{ groupId: string }>;
 }) {
   const { groupId } = use(params);
-  const { user } = useUser();
-  const { groups, loading: groupsLoading } = useGroups();
+  const { user, isLoaded: isUserLoaded } = useUser();
+  const router = useRouter();
+  const { groups, loading: groupsLoading, error: groupsError } = useGroups();
+  const hasRedirected = useRef(false);
 
   const activeGroup = groups.find((g) => g.id === groupId);
   const viewerId = getGroupViewerId(activeGroup, user?.id);
@@ -27,12 +30,41 @@ export default function GroupPage({
   const [deletingExpenseId, setDeletingExpenseId] = useState<string | null>(null);
 
   useEffect(() => {
-    if (groupId) {
-      getGroupExpenses(groupId)
-        .then((data) => setItems(data || []))
-        .finally(() => setIsLoading(false));
+    if (
+      groupsLoading ||
+      groupsError ||
+      !isUserLoaded ||
+      activeGroup ||
+      hasRedirected.current
+    ) {
+      return;
     }
-  }, [groupId]);
+
+    hasRedirected.current = true;
+    toast.error("You don't have access to this group.");
+    router.replace("/groups");
+  }, [activeGroup, groupsError, groupsLoading, isUserLoaded, router]);
+
+  useEffect(() => {
+    if (!groupId || groupsLoading || groupsError || !activeGroup) {
+      return;
+    }
+
+    getGroupExpenses(groupId)
+      .then((data) => setItems(data || []))
+      .catch(() => setItems([]))
+      .finally(() => setIsLoading(false));
+  }, [activeGroup, groupId, groupsError, groupsLoading]);
+
+  if (groupsError) {
+    return (
+      <div className="p-4 md:p-8">
+        <p className="text-sm font-medium text-red-600">
+          Unable to load your groups. Please try again.
+        </p>
+      </div>
+    );
+  }
 
   if (groupsLoading || (isLoading && items.length === 0)) {
     return (
