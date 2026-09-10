@@ -8,6 +8,7 @@ import { deleteExpense, getGroupExpenses } from "@/lib/api";
 import { Dashboard, DashboardSkeleton } from "@/features/dashboard/components/dashboard";
 import { useGroups } from "@/features/groups/hooks/use-groups";
 import { getGroupViewerId } from "@/lib/identity";
+import { shouldRedirectFromGroupRoute } from "@/lib/group-access";
 import { Expense } from "@/lib/types";
 
 export default function GroupPage({
@@ -26,15 +27,18 @@ export default function GroupPage({
 
   const [items, setItems] = useState<Expense[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [expensesError, setExpensesError] = useState(false);
   const [editingExpense, setEditingExpense] = useState<Expense | null>(null);
   const [deletingExpenseId, setDeletingExpenseId] = useState<string | null>(null);
 
   useEffect(() => {
     if (
-      groupsLoading ||
-      groupsError ||
-      !isUserLoaded ||
-      activeGroup ||
+      !shouldRedirectFromGroupRoute({
+        isUserLoaded,
+        groupsLoading,
+        groupsError,
+        hasGroup: Boolean(activeGroup),
+      }) ||
       hasRedirected.current
     ) {
       return;
@@ -51,8 +55,14 @@ export default function GroupPage({
     }
 
     getGroupExpenses(groupId)
-      .then((data) => setItems(data || []))
-      .catch(() => setItems([]))
+      .then((data) => {
+        setItems(data || []);
+        setExpensesError(false);
+      })
+      .catch(() => {
+        setExpensesError(true);
+        toast.error("Unable to load this group's expenses.");
+      })
       .finally(() => setIsLoading(false));
   }, [activeGroup, groupId, groupsError, groupsLoading]);
 
@@ -76,11 +86,28 @@ export default function GroupPage({
 
   if (!activeGroup) return null;
 
+  if (expensesError) {
+    return (
+      <div className="p-4 md:p-8">
+        <p className="text-sm font-medium text-red-600">
+          Unable to load this group&apos;s expenses. Please try again.
+        </p>
+      </div>
+    );
+  }
+
   const refreshExpenses = () => {
     setEditingExpense(null);
     setIsLoading(true);
     getGroupExpenses(groupId)
-      .then((data) => setItems(data || []))
+      .then((data) => {
+        setItems(data || []);
+        setExpensesError(false);
+      })
+      .catch(() => {
+        setExpensesError(true);
+        toast.error("Unable to load this group's expenses.");
+      })
       .finally(() => setIsLoading(false));
   };
 

@@ -6,6 +6,7 @@ import { useParams, useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { GroupSettings } from "@/features/groups/components/group-settings";
 import { useGroups } from "@/features/groups/hooks/use-groups";
+import { shouldRedirectFromGroupRoute } from "@/lib/group-access";
 import { Group } from "@/lib/types";
 
 export default function GroupSettingsPage() {
@@ -25,10 +26,12 @@ export default function GroupSettingsPage() {
 
   useEffect(() => {
     if (
-      loading ||
-      groupsError ||
-      !isUserLoaded ||
-      group ||
+      !shouldRedirectFromGroupRoute({
+        isUserLoaded,
+        groupsLoading: loading,
+        groupsError,
+        hasGroup: Boolean(group),
+      }) ||
       hasRedirected.current
     ) {
       return;
