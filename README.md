@@ -34,6 +34,10 @@ npx prisma db push
 
 ```
 
+The production build does not seed the database by default. To explicitly seed
+the demo data during a build, set `SEED_DATABASE=true`; otherwise, run
+`npm run seed` manually when needed.
+
 **3. Run the development server:**
 
 ```bash
