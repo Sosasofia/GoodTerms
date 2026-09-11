@@ -45,7 +45,7 @@ model Member {
   group   Group  @relation(fields: [groupId], references: [id], onDelete: Cascade)
 
   userId String?
-  user   User?   @relation(fields: [userId], references: [id])
+  user   User?   @relation(fields: [userId], references: [id], onDelete: SetNull)
 
   paidExpenses     Expense[] @relation("Payer")
   sentExpenses     Expense[] @relation("Sender")
@@ -87,5 +87,5 @@ model Split {
   expense   Expense @relation(fields: [expenseId], references: [id], onDelete: Cascade)
 
   debtorId String
-  debtor   Member @relation("Debtor", fields: [debtorId], references: [id])
+  debtor   Member @relation("Debtor", fields: [debtorId], references: [id], onDelete: Restrict)
 }

@@ -164,13 +164,13 @@ export async function DELETE(
         );
       }
 
-      const updated = await prisma.group.update({
+      await prisma.member.update({
+        where: { id: member.id },
+        data: { user: { disconnect: true } },
+      });
+
+      const updated = await prisma.group.findUniqueOrThrow({
         where: { id: groupId },
-        data: {
-          members: {
-            delete: { id: member.id },
-          },
-        },
         include: { owner: true, members: { include: { user: true } } },
       });
 
@@ -208,13 +208,13 @@ export async function DELETE(
         );
       }
 
-      const updated = await prisma.group.update({
+      await prisma.member.update({
+        where: { id: targetMember.id },
+        data: { user: { disconnect: true } },
+      });
+
+      const updated = await prisma.group.findUniqueOrThrow({
         where: { id: groupId },
-        data: {
-          members: {
-            delete: { id: targetMember.id },
-          },
-        },
         include: { owner: true, members: { include: { user: true } } },
       });
 
