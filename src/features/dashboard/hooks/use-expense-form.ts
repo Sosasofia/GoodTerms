@@ -88,18 +88,22 @@ export function useExpenseForm(
     setIsLoading(true);
 
     try {
-      const splitAmount = Number((parsedAmount / involved.length).toFixed(2));
+      const totalCents = Math.round(parsedAmount * 100);
+      const normalizedAmount = totalCents / 100;
+      const baseCents = Math.floor(totalCents / involved.length);
+      const remainderCents = totalCents - baseCents * involved.length;
+      const splits = involved.map((memberId, index) => ({
+        debtorId: memberId,
+        amount: (baseCents + (index < remainderCents ? 1 : 0)) / 100,
+      }));
 
       const payload = {
         description,
-        amount: parsedAmount,
+        amount: normalizedAmount,
         note,
         dueDate: dueDate ? new Date(`${dueDate}T12:00:00`).toISOString() : null,
         payerId,
-        splits: involved.map((memberId) => ({
-          debtorId: memberId,
-          amount: splitAmount,
-        })),
+        splits,
       };
 
       if (initialExpense && initialExpense.type === "expense") {
