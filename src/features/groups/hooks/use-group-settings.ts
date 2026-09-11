@@ -46,7 +46,7 @@ export function useGroupSettings(
   );
 
   const eligibleTransferMembers = group.members.filter(
-    (member) => member.userId !== group.ownerId,
+    (member) => Boolean(member.userId) && member.userId !== group.ownerId,
   );
 
   const handleSave = async () => {
