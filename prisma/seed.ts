@@ -168,7 +168,7 @@ async function main() {
       splitId: baliCreatedExpenses[0].splits[1].id,
     },
     {
-      amount: 240,
+      amount: 60,
       senderId: members[0].id,
       receiverId: members[1].id,
       splitId: baliCreatedExpenses[1].splits[0].id,
