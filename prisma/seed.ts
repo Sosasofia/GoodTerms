@@ -1,7 +1,14 @@
-import { PrismaClient } from "@prisma/client";
+import "dotenv/config";
+import { PrismaClient, Prisma } from "../generated/prisma/client";
+import { PrismaPg } from "@prisma/adapter-pg";
 import { v4 as uuidv4 } from "uuid";
 
-const prisma = new PrismaClient();
+const adapter = new PrismaPg({
+  connectionString: process.env.DATABASE_URL,
+});
+const prisma = new PrismaClient({
+  adapter,
+});
 
 async function main() {
   console.log("🧹 Cleaning up old demo data...");
