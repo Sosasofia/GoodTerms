@@ -82,10 +82,10 @@ export function Sidebar({
         ) : (
           <>
             {(groups || []).map((group) => {
-              const isActive = !group.isArchived;
+              const isActive = pathname.includes(group.id);
               const owner = isGroupOwner(group);
 
-              if (!isActive) return null;
+              if (group.isArchived) return null;
 
               return (
                 <div
