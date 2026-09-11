@@ -4,12 +4,11 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "prisma generate && prisma migrate deploy && npm run seed:if-enabled && next build",
+    "build": "prisma generate && prisma migrate deploy && next build",
     "start": "next start",
     "lint": "eslint",
     "test": "jest",
-    "test:watch": "jest --watch",
-    "seed:if-enabled": "node scripts/seed-if-enabled.mjs"
+    "test:watch": "jest --watch"
   },
   "dependencies": {
     "@clerk/nextjs": "^6.36.7",
