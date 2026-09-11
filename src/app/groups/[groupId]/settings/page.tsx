@@ -7,6 +7,7 @@ import { toast } from "sonner";
 import { GroupSettings } from "@/features/groups/components/group-settings";
 import { useGroups } from "@/features/groups/hooks/use-groups";
 import { shouldRedirectFromGroupRoute } from "@/lib/group-access";
+import { leaveGroup } from "@/lib/api";
 import { Group } from "@/lib/types";
 
 export default function GroupSettingsPage() {
@@ -46,21 +47,10 @@ export default function GroupSettingsPage() {
     if (!group) return;
 
     try {
-      const response = await fetch(`/api/groups/${group.id}`, {
-        method: "DELETE",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ action: "leave" }),
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data?.error || "Failed to leave group.");
-      }
-
-      window.location.href = "/groups";
+      await leaveGroup(group.id);
+      router.replace("/groups");
     } catch (error: any) {
-      alert(error.message || "Failed to leave group.");
+      toast.error(error.message || "Failed to leave group.");
     }
   };
 
