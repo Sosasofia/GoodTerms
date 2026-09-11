@@ -53,7 +53,7 @@ export function getSafeErrorMessage(
     return "Could not update the expense. Please check the entry details and try again.";
   }
 
-  return rawMessage;
+  return fallback;
 }
 
 export async function authorizeGroupAccess(
