@@ -78,6 +78,20 @@ export async function POST(request: Request) {
           throw new Error("The selected debt is no longer available.");
         }
 
+        const claimResult = await tx.split.updateMany({
+          where: {
+            id: { in: requestedSplitIds },
+            isPaid: false,
+          },
+          data: { isPaid: true },
+        });
+
+        if (claimResult.count !== requestedSplitIds.length) {
+          throw new Error(
+            "Conflict: One or more of these splits have already been settled.",
+          );
+        }
+
         await tx.split.updateMany({
           where: { id: { in: requestedSplitIds } },
           data: { isPaid: true },
@@ -141,6 +155,18 @@ export async function POST(request: Request) {
     return NextResponse.json(settlement);
   } catch (error: any) {
     console.error("Settlement Error:", error);
+    if (
+      error.message &&
+      error.message.startsWith(
+        "Conflict: One or more of these splits have already been settled.",
+      )
+    ) {
+      return NextResponse.json(
+        { error: "One or more of these splits have already been settled." },
+        { status: 409 },
+      );
+    }
+
     return NextResponse.json(
       { error: "An error occurred while processing the settlement." },
       { status: 500 },

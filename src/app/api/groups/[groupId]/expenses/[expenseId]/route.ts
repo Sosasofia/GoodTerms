@@ -44,10 +44,7 @@ export async function PUT(request: NextRequest, { params }: RouteContext) {
     }
 
     if (!payerId) {
-      return NextResponse.json(
-        { error: "Missing payer." },
-        { status: 400 },
-      );
+      return NextResponse.json({ error: "Missing payer." }, { status: 400 });
     }
 
     if (!splits || !Array.isArray(splits) || splits.length === 0) {
@@ -152,12 +149,22 @@ export async function DELETE(request: NextRequest, { params }: RouteContext) {
 
     const existing = await prisma.expense.findFirst({
       where: { id: expenseId, groupId: groupId, type: "expense" },
+      include: { splits: true },
     });
 
     if (!existing) {
       return NextResponse.json(
         { error: "Expense not found." },
         { status: 404 },
+      );
+    }
+
+    const hasPaidSplits = existing.splits.some((split) => split.isPaid);
+
+    if (hasPaidSplits) {
+      return NextResponse.json(
+        { error: "Cannot delete an expense with paid splits." },
+        { status: 409 },
       );
     }
 
