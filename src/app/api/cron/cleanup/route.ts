@@ -15,10 +15,7 @@ export async function GET(request: Request) {
 
     const expiredGroups = await prisma.group.findMany({
       where: {
-        code: {
-          startsWith: "DEMO-",
-          not: "DEMO-BALI-2025",
-        },
+        isDemo: true,
         createdAt: { lt: thresholdDate },
       },
       select: { id: true },

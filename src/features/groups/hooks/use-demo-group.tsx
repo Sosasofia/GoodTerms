@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useUser } from "@clerk/nextjs";
+import { toast } from "sonner";
 import { joinGroup, getGroups } from "@/lib/api";
 import { getOrCreateGuestId } from "@/lib/identity";
 
@@ -51,12 +52,11 @@ export function useDemoGroup(groups: any[], refreshGroups: () => Promise<void>) 
       const freshGroups = await getGroups();
       const demoGroup = (freshGroups || []).find((g: any) => g.code === sandboxCode);
 
-
       if (demoGroup) {
         router.push(`/groups/${demoGroup.id}`);
       }
     } catch (error) {
-      console.error("Failed to load demo data", error);
+      toast.error("Failed to load demo data. Please try again.");
     } finally {
       setDemoLoading(false);
     }

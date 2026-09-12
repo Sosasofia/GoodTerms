@@ -29,6 +29,7 @@ export async function POST() {
             name: template.name,
             code: sandboxCode,
             ownerId: null,
+            isDemo: true,
           },
         });
 
