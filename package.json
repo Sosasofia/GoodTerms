@@ -2,9 +2,11 @@
   "name": "good-terms",
   "version": "0.1.0",
   "private": true,
+  "type": "module",
   "scripts": {
     "dev": "next dev",
-    "build": "prisma generate && next build",
+    "build": "prisma migrate deploy && next build",
+    "postinstall": "prisma generate",
     "start": "next start",
     "lint": "eslint",
     "test": "jest",
@@ -43,9 +45,6 @@
     "ts-node": "^10.9.2",
     "tsx": "^4.23.13",
     "typescript": "^5"
-  },
-  "prisma": {
-    "seed": "npx tsx prisma/seed.ts"
   },
   "allowScripts": {
     "@clerk/shared@3.47.8": true,
