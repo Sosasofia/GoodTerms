@@ -1,31 +1,42 @@
-import { PrismaClient } from "@prisma/client";
+import "dotenv/config";
+import { PrismaClient } from "../generated/prisma/client";
+import { PrismaPg } from "@prisma/adapter-pg";
 import { v4 as uuidv4 } from "uuid";
 
-const prisma = new PrismaClient();
+const adapter = new PrismaPg({
+  connectionString: process.env.DATABASE_URL,
+});
+const prisma = new PrismaClient({
+  adapter,
+});
 
 async function main() {
   console.log("🧹 Cleaning up old demo data...");
 
-  const groupCodes = ["BALI-2025", "DEMO_SEED_MARKER_2025"];
+  const groupCodes = ["DEMO-BALI-2025"];
   for (const code of groupCodes) {
     const group = await prisma.group.findUnique({ where: { code } });
     if (group) {
+      await prisma.split.deleteMany({
+        where: { expense: { groupId: group.id } },
+      });
+      await prisma.expense.deleteMany({ where: { groupId: group.id } });
+      await prisma.member.deleteMany({ where: { groupId: group.id } });
       await prisma.group.delete({ where: { id: group.id } });
     }
   }
 
   const demoEmails = [
-    "alice@demo.com",
+    "duser@demo.com",
     "bob@demo.com",
     "carol@demo.com",
     "david@demo.com",
-    "emma@demo.com",
-    "frank@demo.com",
   ];
 
   for (const email of demoEmails) {
     const user = await prisma.user.findFirst({ where: { email } });
     if (user) {
+      await prisma.member.deleteMany({ where: { userId: user.id } });
       await prisma.user.delete({ where: { id: user.id } });
     }
   }
@@ -33,12 +44,10 @@ async function main() {
   console.log("🌱 Seeding demo users...");
 
   const demoUsers = [
-    { name: "Alice Chen", email: "alice@demo.com", guestId: uuidv4() },
+    { name: "Demo User", email: "duser@demo.com", guestId: uuidv4() },
     { name: "Bob Martinez", email: "bob@demo.com", guestId: uuidv4() },
     { name: "Carol Singh", email: "carol@demo.com", guestId: uuidv4() },
     { name: "David Lee", email: "david@demo.com", guestId: uuidv4() },
-    { name: "Emma Wilson", email: "emma@demo.com", guestId: uuidv4() },
-    { name: "Frank Johnson", email: "frank@demo.com", guestId: uuidv4() },
   ];
 
   const users = await Promise.all(
@@ -47,7 +56,6 @@ async function main() {
         data: {
           name: user.name,
           email: user.email,
-          guestId: user.guestId,
         },
       }),
     ),
@@ -58,19 +66,22 @@ async function main() {
   const baliGroup = await prisma.group.create({
     data: {
       name: "Bali Trip 2025",
-      code: "BALI-2025",
+      code: "DEMO-BALI-2025",
       pin: null,
+      ownerId: users[0].id,
       members: {
-        connect: [
-          { id: users[0].id },
-          { id: users[1].id },
-          { id: users[2].id },
-          { id: users[3].id },
+        create: [
+          { name: users[0].name, userId: null },
+          { name: users[1].name, userId: null },
+          { name: users[2].name, userId: null },
+          { name: users[3].name, userId: null },
         ],
       },
     },
     include: { members: true },
   });
+
+  const members = baliGroup.members;
 
   console.log("💸 Seeding expenses & splits...");
 
@@ -78,63 +89,63 @@ async function main() {
     {
       description: "Villa rental (4 nights)",
       amount: 800,
-      payerId: users[0].id,
+      payerId: members[0].id,
       splits: [
-        { debtorId: users[0].id, amount: 200 },
-        { debtorId: users[1].id, amount: 200 },
-        { debtorId: users[2].id, amount: 200 },
-        { debtorId: users[3].id, amount: 200 },
+        { debtorId: members[0].id, amount: 200 },
+        { debtorId: members[1].id, amount: 200 },
+        { debtorId: members[2].id, amount: 200 },
+        { debtorId: members[3].id, amount: 200 },
       ],
     },
     {
       description: "Dinner at Seminyak Beach Club",
       amount: 240,
-      payerId: users[1].id,
+      payerId: members[1].id,
       splits: [
-        { debtorId: users[0].id, amount: 60 },
-        { debtorId: users[1].id, amount: 60 },
-        { debtorId: users[2].id, amount: 60 },
-        { debtorId: users[3].id, amount: 60 },
+        { debtorId: members[0].id, amount: 60 },
+        { debtorId: members[1].id, amount: 60 },
+        { debtorId: members[2].id, amount: 60 },
+        { debtorId: members[3].id, amount: 60 },
       ],
     },
     {
       description: "Scooter rentals",
       amount: 120,
-      payerId: users[2].id,
+      payerId: members[2].id,
       splits: [
-        { debtorId: users[0].id, amount: 30 },
-        { debtorId: users[1].id, amount: 30 },
-        { debtorId: users[2].id, amount: 30 },
-        { debtorId: users[3].id, amount: 30 },
+        { debtorId: members[0].id, amount: 30 },
+        { debtorId: members[1].id, amount: 30 },
+        { debtorId: members[2].id, amount: 30 },
+        { debtorId: members[3].id, amount: 30 },
       ],
     },
     {
       description: "Yoga class & spa day",
       amount: 300,
-      payerId: users[0].id,
+      payerId: members[0].id,
       splits: [
-        { debtorId: users[0].id, amount: 75 },
-        { debtorId: users[2].id, amount: 75 },
-        { debtorId: users[3].id, amount: 75 },
-        { debtorId: users[1].id, amount: 75 },
+        { debtorId: members[0].id, amount: 75 },
+        { debtorId: members[2].id, amount: 75 },
+        { debtorId: members[3].id, amount: 75 },
+        { debtorId: members[1].id, amount: 75 },
       ],
     },
     {
       description: "Boat tour to Gili Islands",
       amount: 200,
-      payerId: users[3].id,
+      payerId: members[3].id,
       splits: [
-        { debtorId: users[0].id, amount: 50 },
-        { debtorId: users[1].id, amount: 50 },
-        { debtorId: users[2].id, amount: 50 },
-        { debtorId: users[3].id, amount: 50 },
+        { debtorId: members[0].id, amount: 50 },
+        { debtorId: members[1].id, amount: 50 },
+        { debtorId: members[2].id, amount: 50 },
+        { debtorId: members[3].id, amount: 50 },
       ],
     },
   ];
 
-  const baliTransactions = await Promise.all(
+  const baliCreatedExpenses = await Promise.all(
     baliExpenses.map((expense) =>
-      prisma.transaction.create({
+      prisma.expense.create({
         data: {
           description: expense.description,
           amount: expense.amount,
@@ -159,21 +170,21 @@ async function main() {
   const baliSettlements = [
     {
       amount: 200,
-      senderId: users[1].id,
-      receiverId: users[0].id,
-      splitId: baliTransactions[0].splits[1].id,
+      senderId: members[1].id,
+      receiverId: members[0].id,
+      splitId: baliCreatedExpenses[0].splits[1].id,
     },
     {
-      amount: 240,
-      senderId: users[0].id,
-      receiverId: users[1].id,
-      splitId: baliTransactions[1].splits[0].id,
+      amount: 60,
+      senderId: members[0].id,
+      receiverId: members[1].id,
+      splitId: baliCreatedExpenses[1].splits[0].id,
     },
   ];
 
   await Promise.all(
     baliSettlements.map((settlement) =>
-      prisma.transaction.create({
+      prisma.expense.create({
         data: {
           description: "Payment",
           amount: settlement.amount,

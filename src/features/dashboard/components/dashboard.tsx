@@ -1,18 +1,23 @@
 "use client";
 
-import { useState, useMemo } from "react";
-import { Group, Transaction } from "../lib/types";
+import { useState, useMemo, useEffect, useRef } from "react";
+import { useUser } from "@clerk/nextjs";
+import { Expense, Group } from "../../../lib/types";
 import { ExpenseForm } from "./expense-form";
 import { HistoryList } from "./history-list";
-import { SettlementForm } from "./settlement-form";
+import { SettlementsPanel } from "./settlements-panel";
 import { calculateBalances } from "@/services/balances";
 
 interface DashboardProps {
   group: Group;
-  items: Transaction[];
+  items: Expense[];
   viewerId: string;
   onUpdate: () => void;
   loading?: boolean;
+  editingExpense?: Expense | null;
+  onEditExpense?: (item: Expense) => void;
+  onDeleteExpense?: (expenseId: string) => void;
+  onCancelEdit?: () => void;
 }
 
 export function Dashboard({
@@ -21,51 +26,60 @@ export function Dashboard({
   viewerId,
   onUpdate,
   loading,
+  editingExpense,
+  onEditExpense,
+  onDeleteExpense,
+  onCancelEdit,
 }: DashboardProps) {
+  const { user } = useUser();
   const [activeTab, setActiveTab] = useState<"expense" | "settlement">(
     "expense",
   );
+  const [groupState, setGroupState] = useState(group);
+  const dashboardRef = useRef<HTMLDivElement>(null);
 
-  const balances = useMemo(() => calculateBalances(group, items), [items, group]);
+  useEffect(() => {
+    setGroupState(group);
+  }, [group]);
+
+  useEffect(() => {
+    if (editingExpense) {
+      setActiveTab("expense");
+    }
+  }, [editingExpense]);
+
+  const handleEditExpense = (item: Expense) => {
+    onEditExpense?.(item);
+
+    const scrollContainer = dashboardRef.current?.closest("main");
+    if (scrollContainer instanceof HTMLElement) {
+      scrollContainer.scrollTo({ top: 0, behavior: "smooth" });
+    }
+  };
+
+  const balances = useMemo(() =>
+    calculateBalances(groupState, items),
+    [items, groupState]);
 
   return (
-    <div className="max-w-2xl mx-auto">
+    <div ref={dashboardRef} className="max-w-2xl mx-auto">
       <div className="flex justify-between items-end mb-6 border-b pb-4">
-        <div>
-          <h2 className="text-3xl font-extrabold text-slate-900">
-            {group.name}
-          </h2>
-
-          <div className="flex flex-wrap items-center gap-3 mt-2 text-sm font-medium">
-            <span className="bg-slate-100 text-slate-600 px-3 py-1 rounded-md font-mono border border-slate-200">
-              Code:{" "}
-              <span className="font-bold text-slate-900 select-all">
-                {group.code}
-              </span>
-            </span>
-
-            {group.pin && (
-              <span className="bg-yellow-50 text-yellow-700 px-3 py-1 rounded-md font-mono border border-yellow-200 flex items-center gap-1">
-                🔒 PIN:{" "}
-                <span className="font-bold select-all">{group.pin}</span>
-              </span>
-            )}
-          </div>
-        </div>
+        <h2 className="text-3xl font-extrabold text-slate-900">
+          {groupState.name}
+        </h2>
       </div>
 
       <div className="grid grid-cols-3 gap-2 mb-8">
         {group.members.map((u) => {
-          const bal = balances[u.name] || 0;
+          const bal = balances[u.id] || 0;
           const isPositive = bal >= 0;
           return (
             <div
               key={u.id}
-              className={`p-2 rounded-lg text-center border transition-colors ${
-                isPositive
-                  ? "bg-green-50 border-green-200"
-                  : "bg-red-50 border-red-200"
-              }`}
+              className={`p-2 rounded-lg text-center border transition-colors ${isPositive
+                ? "bg-green-50 border-green-200"
+                : "bg-red-50 border-red-200"
+                }`}
             >
               <div className="font-bold text-sm truncate text-slate-700">
                 {u.name}
@@ -84,21 +98,19 @@ export function Dashboard({
       <div className="flex mb-4 bg-white rounded-lg p-1 shadow-sm border border-slate-200">
         <button
           onClick={() => setActiveTab("expense")}
-          className={`flex-1 py-2 rounded-md font-bold text-sm transition-all ${
-            activeTab === "expense"
-              ? "bg-blue-100 text-blue-700 shadow-sm"
-              : "text-slate-500 hover:bg-slate-50"
-          }`}
+          className={`flex-1 py-2 rounded-md font-bold text-sm transition-all ${activeTab === "expense"
+            ? "bg-blue-100 text-blue-700 shadow-sm"
+            : "text-slate-500 hover:bg-slate-50"
+            }`}
         >
           Add Expense
         </button>
         <button
           onClick={() => setActiveTab("settlement")}
-          className={`flex-1 py-2 rounded-md font-bold text-sm transition-all ${
-            activeTab === "settlement"
-              ? "bg-green-100 text-green-700 shadow-sm"
-              : "text-slate-500 hover:bg-slate-50"
-          }`}
+          className={`flex-1 py-2 rounded-md font-bold text-sm transition-all ${activeTab === "settlement"
+            ? "bg-green-100 text-green-700 shadow-sm"
+            : "text-slate-500 hover:bg-slate-50"
+            }`}
         >
           Settle Up
         </button>
@@ -106,10 +118,15 @@ export function Dashboard({
 
       <div className="mb-8">
         {activeTab === "expense" ? (
-          <ExpenseForm group={group} onSuccess={onUpdate} />
+          <ExpenseForm
+            group={groupState}
+            onSuccess={onUpdate}
+            initialExpense={editingExpense}
+            onCancel={onCancelEdit}
+          />
         ) : (
-          <SettlementForm
-            group={group}
+          <SettlementsPanel
+            group={groupState}
             items={items}
             viewerId={viewerId}
             onSuccess={onUpdate}
@@ -117,7 +134,11 @@ export function Dashboard({
         )}
       </div>
 
-      <HistoryList items={items} />
+      <HistoryList
+        items={items}
+        onEditExpense={handleEditExpense}
+        onDeleteExpense={onDeleteExpense}
+      />
     </div>
   );
 }

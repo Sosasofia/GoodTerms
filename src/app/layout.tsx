@@ -3,6 +3,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import { ClerkProvider } from "@clerk/nextjs";
 // @ts-ignore -- Next.js global stylesheet side-effect import
 import "./globals.css";
+import { Toaster } from "sonner";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -31,6 +32,18 @@ export default function RootLayout({
           className={`${geistSans.variable} ${geistMono.variable} antialiased`}
         >
           {children}
+          <Toaster
+            closeButton
+            richColors
+            position="bottom-right"
+            icons={{
+              success: null,
+              error: null,
+              info: null,
+              warning: null,
+              loading: null,
+            }}
+          />
         </body>
       </html>
     </ClerkProvider>

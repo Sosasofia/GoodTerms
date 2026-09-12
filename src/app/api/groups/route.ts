@@ -11,7 +11,9 @@ export async function GET(req: Request) {
       return NextResponse.json([]);
     }
 
-    const memberCondition = userId ? { clerkId: userId } : { guestId: guestId };
+    const memberCondition = userId
+      ? { user: { clerkId: userId } }
+      : { user: { guestId } };
 
     const groups = await prisma.group.findMany({
       where: {
@@ -20,7 +22,8 @@ export async function GET(req: Request) {
         },
       },
       include: {
-        members: true,
+        owner: true,
+        members: { include: { user: true } },
       },
       orderBy: { createdAt: "desc" },
     });
@@ -49,21 +52,33 @@ export async function POST(req: Request) {
     const cleanName = name.trim().toUpperCase().replace(/\s+/g, "-");
     const code = `${cleanName}-${Math.floor(1000 + Math.random() * 9000)}`;
 
+    const dbUser = await prisma.user.upsert({
+      where: { clerkId: userId },
+      create: {
+        clerkId: userId,
+        name: user.firstName || "User",
+        email: user.emailAddresses[0]?.emailAddress || "",
+      },
+      update: {},
+    });
+
     const group = await prisma.group.create({
       data: {
         name,
         code,
         pin: pin || null,
+        isArchived: false,
+        ownerId: dbUser.id,
         members: {
-          connectOrCreate: {
-            where: { clerkId: userId },
-            create: {
-              clerkId: userId,
-              name: user.firstName || "User",
-              email: user.emailAddresses[0]?.emailAddress || "",
-            },
+          create: {
+            name: dbUser.name,
+            userId: dbUser.id,
           },
         },
+      },
+      include: {
+        owner: true,
+        members: { include: { user: true } },
       },
     });
 

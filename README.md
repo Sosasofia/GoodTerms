@@ -34,6 +34,9 @@ npx prisma db push
 
 ```
 
+The production build does not seed the database. To seed the demo data, run
+`npx prisma db seed` manually when needed.
+
 **3. Run the development server:**
 
 ```bash

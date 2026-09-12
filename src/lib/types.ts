@@ -1,15 +1,29 @@
 export interface User {
   id: string;
   name: string;
-  clerkId: string;
+  clerkId?: string | null;
+  guestId?: string | null;
+  email?: string | null;
+}
+
+export interface Member {
+  id: string;
+  name: string;
+  joinedAt?: string;
+  groupId: string;
+  userId?: string | null;
+  user?: User | null;
 }
 
 export interface Group {
   id: string;
   name: string;
-  pin?: string;
+  pin?: string | null;
   code: string;
-  members: User[];
+  isArchived?: boolean;
+  ownerId?: string | null;
+  owner?: User | null;
+  members: Member[];
 }
 
 export interface Expense {
@@ -18,13 +32,17 @@ export interface Expense {
   description: string;
   amount: number;
   note?: string;
-  payer: User;
+  date?: string | null;
+  dueDate?: string | null;
+  payerId: string;
+  payer: Member;
   splits: Split[];
 }
 
 export interface Split {
   id: string;
-  debtor: User;
+  debtorId: string;
+  debtor: Member;
   amount: number;
   isPaid: boolean;
 }
@@ -34,10 +52,10 @@ export interface Settlement {
   type: "settlement";
   amount: number;
   senderId: string;
-  sender: User;
+  sender: Member;
   receiverId: string;
-  receiver: User;
-  createdAt: string;
+  receiver: Member;
+  date: string;
 }
 
 export type Transaction = Expense | Settlement;

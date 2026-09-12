@@ -1,9 +1,11 @@
 import { getOrCreateGuestId } from "./identity";
+import type { Expense, Group } from "./types";
 
 export interface ExpensePayload {
   description: string;
   amount: number;
   note?: string;
+  dueDate?: string | null;
   payerId: string;
   splits: { debtorId: string; amount: number }[];
 }
@@ -13,42 +15,53 @@ export interface SettlementPayload {
   senderId: string;
   receiverId: string;
   splitId?: string;
+  splitIds?: string[];
+  offsetSplitIds?: string[];
   amount: number;
 }
 
 export interface JoinGroupPayload {
   code: string;
   pin?: string;
+  memberName?: string;
   guestName?: string;
   guestId?: string;
   action?: "join" | "claim";
 }
 
-class ApiError extends Error {
+export interface GroupSettingsPayload {
+  pin?: string | null;
+  name?: string | null;
+  code?: string | null;
+  isArchived?: boolean;
+  action?: "transferOwner";
+  memberId?: string;
+}
+
+export class ApiError extends Error {
   requiresConfirmation?: boolean;
+
   constructor(message: string, requiresConfirmation?: boolean) {
     super(message);
+    this.name = "ApiError";
     this.requiresConfirmation = requiresConfirmation;
   }
 }
 
-const fetcher = async (
+const fetcher = async <T>(
   url: string,
-  options?: RequestInit & { token?: string | null },
-) => {
+  options?: RequestInit,
+): Promise<T | null> => {
   const headers = new Headers(options?.headers);
-
-  if (!headers.has("Content-Type") && options?.body) {
-    headers.set("Content-Type", "application/json");
-  }
-
-  if (options?.token) {
-    headers.set("Authorization", `Bearer ${options?.token}`);
-  }
-
+  const body = options?.body;
   const guestId = getOrCreateGuestId();
+
   if (guestId) {
     headers.set("x-guest-id", guestId);
+  }
+
+  if (!headers.has("Content-Type") && body && !(body instanceof FormData)) {
+    headers.set("Content-Type", "application/json");
   }
 
   const res = await fetch(url, {
@@ -62,77 +75,115 @@ const fetcher = async (
 
     try {
       const errorData = await res.json();
-      errorMessage = errorData.error || errorMessage;
-      requiresConfirmation = errorData.requiresConfirmation;
-    } catch (e) {
-      console.error("Non-JSON error response:", e);
+
+      if (typeof errorData?.error === "string") {
+        errorMessage = errorData.error;
+      }
+
+      requiresConfirmation = Boolean(errorData?.requiresConfirmation);
+    } catch {
+      try {
+        const errorText = await res.text();
+
+        if (errorText) {
+          errorMessage = errorText;
+        }
+      } catch {}
     }
 
     throw new ApiError(errorMessage, requiresConfirmation);
   }
 
+  if (res.status === 204) {
+    return null;
+  }
+
   try {
-    return await res.json();
-  } catch (e) {
+    return (await res.json()) as T;
+  } catch {
     return null;
   }
 };
 
-export const getGroups = async (token?: string | null) => {
-  return fetcher("/api/groups", {
+export const getGroups = () => {
+  return fetcher<Group[]>("/api/groups", {
     method: "GET",
-    token,
   });
 };
 
-export const getGroupTransactions = async (
-  groupId: string,
-  token?: string | null,
-) => {
-  return fetcher(`/api/groups/${groupId}/transactions`, {
-    token,
-  });
+export const getGroupExpenses = (groupId: string) => {
+  return fetcher<Expense[]>(`/api/groups/${groupId}/expenses`);
 };
 
-export const createGroup = (
-  name: string,
-  pin?: string,
-  token?: string | null,
-) =>
-  fetcher("/api/groups", {
+export const createGroup = (name: string, pin?: string) =>
+  fetcher<Group>("/api/groups", {
     method: "POST",
     body: JSON.stringify({ name, pin }),
-    token,
   });
 
-export const joinGroup = (
-  data: JoinGroupPayload,
-  token?: string | null,
-) =>
-  fetcher("/api/groups/join", {
+export const joinGroup = (data: JoinGroupPayload) =>
+  fetcher<Group>("/api/groups/join", {
     method: "POST",
     body: JSON.stringify(data),
-    token,
   });
 
-export const createExpense = async (
+export const updateGroupSettings = (
   groupId: string,
-  data: ExpensePayload,
-  token?: string | null,
-) => {
-  return fetcher(`/api/groups/${groupId}/transactions`, {
+  data: GroupSettingsPayload,
+) =>
+  fetcher<Group>(`/api/groups/${groupId}`, {
+    method: "PATCH",
+    body: JSON.stringify(data),
+  });
+
+export const leaveGroup = (groupId: string) =>
+  fetcher<Group>(`/api/groups/${groupId}`, {
+    method: "DELETE",
+    body: JSON.stringify({ action: "leave" }),
+  });
+
+export const removeGroupMember = (groupId: string, memberId: string) =>
+  fetcher<Group>(`/api/groups/${groupId}`, {
+    method: "DELETE",
+    body: JSON.stringify({ action: "removeMember", memberId }),
+  });
+
+export const createExpense = (groupId: string, data: ExpensePayload) => {
+  return fetcher<Expense>(`/api/groups/${groupId}/expenses`, {
     method: "POST",
-    body: JSON.stringify({ ...data }),
-    token,
+    body: JSON.stringify(data),
   });
 };
 
-export const createSettlement = (
-  data: SettlementPayload, 
-  token?: string | null
-) =>
-  fetcher("/api/settlements", {
+export const updateExpense = (
+  groupId: string,
+  expenseId: string,
+  data: ExpensePayload,
+) => {
+  return fetcher<Expense>(`/api/groups/${groupId}/expenses/${expenseId}`, {
+    method: "PUT",
+    body: JSON.stringify({ ...data }),
+  });
+};
+
+export const deleteExpense = (groupId: string, expenseId: string) => {
+  return fetcher<{ success: true }>(
+    `/api/groups/${groupId}/expenses/${expenseId}`,
+    {
+      method: "DELETE",
+    },
+  );
+};
+
+export const createSettlement = (data: SettlementPayload) =>
+  fetcher<Expense>("/api/settlements", {
     method: "POST",
     body: JSON.stringify(data),
-    token,
   });
+
+export async function addGroupMember(groupId: string, name: string) {
+  return fetcher<Group>(`/api/groups/${groupId}/add-member`, {
+    method: "POST",
+    body: JSON.stringify({ groupId, name }),
+  });
+}
